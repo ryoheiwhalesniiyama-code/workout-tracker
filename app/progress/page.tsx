@@ -116,7 +116,7 @@ export default function ProgressPage() {
                   contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px' }}
                   labelStyle={{ color: '#9ca3af', fontSize: 12 }}
                   itemStyle={{ color: '#fff' }}
-                  formatter={(v: number) => [`${v}kg`, '最大重量']}
+                  formatter={(v: unknown) => [`${v ?? '-'}kg`, '最大重量'] as [string, string]}
                 />
                 <Line
                   type="monotone"
