@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import DateEditButton from '@/app/components/DateEditButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,7 +15,6 @@ export default async function WorkoutDetailPage({ params }: { params: Promise<{ 
 
   if (!log) notFound()
 
-  // 種目ごとにセットをグループ化
   const exerciseMap: Record<string, typeof sets> = {}
   for (const set of sets ?? []) {
     if (!exerciseMap[set.exercise_name]) exerciseMap[set.exercise_name] = []
@@ -25,9 +25,9 @@ export default async function WorkoutDetailPage({ params }: { params: Promise<{ 
     <div className="min-h-screen bg-gray-950 text-white">
       <div className="flex items-center px-4 py-3 border-b border-gray-800 bg-gray-900">
         <Link href="/" className="text-gray-400 mr-3 text-xl">←</Link>
-        <div>
+        <div className="flex-1">
           <h1 className="font-bold text-lg">{log.date}</h1>
-          <p className="text-xs text-gray-500">トレーニング詳細</p>
+          <DateEditButton id={log.id} currentDate={log.date} />
         </div>
       </div>
 
@@ -85,7 +85,7 @@ export default async function WorkoutDetailPage({ params }: { params: Promise<{ 
 
         {/* AIコーチへのリンク */}
         <Link
-          href={`/chat?date=${log.date}`}
+          href="/chat"
           className="block w-full bg-blue-600 hover:bg-blue-500 rounded-xl py-4 text-center font-bold transition-colors"
         >
           🤖 このトレーニングをAIにレビューしてもらう

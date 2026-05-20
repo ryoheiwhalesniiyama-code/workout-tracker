@@ -1,19 +1,19 @@
 import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabase'
+import WorkoutHistory from '@/app/components/WorkoutHistory'
 
 export const dynamic = 'force-dynamic'
 
 async function getData() {
-  const [{ data: logs }, { data: sets }, { data: metrics }] = await Promise.all([
-    supabaseAdmin.from('workout_logs').select('*').order('date', { ascending: false }).limit(10),
-    supabaseAdmin.from('workout_sets').select('*').eq('is_main_lift', true).order('created_at', { ascending: false }),
+  const [{ data: sets }, { data: metrics }] = await Promise.all([
+    supabaseAdmin.from('workout_sets').select('*').eq('is_main_lift', true),
     supabaseAdmin.from('body_metrics').select('*').order('date', { ascending: false }).limit(1)
   ])
-  return { logs: logs ?? [], sets: sets ?? [], latestMetric: metrics?.[0] ?? null }
+  return { sets: sets ?? [], latestMetric: metrics?.[0] ?? null }
 }
 
 export default async function HomePage() {
-  const { logs, sets, latestMetric } = await getData()
+  const { sets, latestMetric } = await getData()
 
   const getPR = (exercise: string) => {
     const filtered = sets.filter(s => s.exercise_name === exercise)
@@ -38,17 +38,22 @@ export default async function HomePage() {
 
         {/* アクションボタン（上部） */}
         <div className="grid grid-cols-2 gap-3">
-          <Link href="/log" className="bg-blue-600 hover:bg-blue-500 active:bg-blue-700 rounded-2xl p-5 text-center transition-colors">
-            <p className="text-3xl mb-2">📷</p>
-            <p className="font-bold">ログを記録</p>
-            <p className="text-xs text-blue-200 mt-1">スクショをアップロード</p>
+          <Link href="/log" className="bg-blue-600 hover:bg-blue-500 active:bg-blue-700 rounded-2xl p-4 text-center transition-colors">
+            <p className="text-3xl mb-1">📷</p>
+            <p className="font-bold text-sm">ログを記録</p>
+            <p className="text-xs text-blue-200 mt-0.5">スクショをアップロード</p>
           </Link>
-          <Link href="/chat" className="bg-gray-800 hover:bg-gray-700 active:bg-gray-600 rounded-2xl p-5 text-center transition-colors">
-            <p className="text-3xl mb-2">🤖</p>
-            <p className="font-bold">AIコーチ</p>
-            <p className="text-xs text-gray-400 mt-1">レビュー・相談</p>
+          <Link href="/chat" className="bg-gray-800 hover:bg-gray-700 active:bg-gray-600 rounded-2xl p-4 text-center transition-colors">
+            <p className="text-3xl mb-1">🤖</p>
+            <p className="font-bold text-sm">AIコーチ</p>
+            <p className="text-xs text-gray-400 mt-0.5">レビュー・相談</p>
           </Link>
         </div>
+        <Link href="/progress" className="block bg-gray-800 hover:bg-gray-700 active:bg-gray-600 rounded-2xl p-4 text-center transition-colors">
+          <p className="text-2xl mb-1">📈</p>
+          <p className="font-bold text-sm">種目別推移グラフ</p>
+          <p className="text-xs text-gray-400 mt-0.5">Big3の重量変化を確認</p>
+        </Link>
 
         {/* Big3 進捗（中部） */}
         <div className="bg-gray-900 rounded-2xl p-4">
@@ -103,33 +108,7 @@ export default async function HomePage() {
         {/* トレーニング履歴（下部） */}
         <div className="bg-gray-900 rounded-2xl p-4">
           <h2 className="font-bold mb-3 text-gray-200">トレーニング履歴</h2>
-          {logs.length === 0 ? (
-            <p className="text-gray-500 text-sm text-center py-4">まだログがありません</p>
-          ) : (
-            <div className="space-y-2">
-              {logs.map(log => (
-                <Link
-                  key={log.id}
-                  href={`/workout/${log.id}`}
-                  className="block bg-gray-800 hover:bg-gray-700 active:bg-gray-600 rounded-xl px-4 py-3 transition-colors"
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="text-sm font-medium">{log.date}</p>
-                      {log.notes && (
-                        <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{log.notes}</p>
-                      )}
-                    </div>
-                    <div className="text-right text-xs text-gray-500">
-                      {log.body_weight && <p>{log.body_weight}kg</p>}
-                      {log.fatigue_level && <p>疲労 {log.fatigue_level}/10</p>}
-                      <p className="text-gray-600 mt-1">→</p>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
+          <WorkoutHistory />
         </div>
 
       </div>
