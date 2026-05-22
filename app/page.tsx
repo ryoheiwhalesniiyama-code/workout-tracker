@@ -49,11 +49,18 @@ export default async function HomePage() {
             <p className="text-xs text-gray-400 mt-0.5">レビュー・相談</p>
           </Link>
         </div>
-        <Link href="/progress" className="block bg-gray-800 hover:bg-gray-700 active:bg-gray-600 rounded-2xl p-4 text-center transition-colors">
-          <p className="text-2xl mb-1">📈</p>
-          <p className="font-bold text-sm">種目別推移グラフ</p>
-          <p className="text-xs text-gray-400 mt-0.5">Big3の重量変化を確認</p>
-        </Link>
+        <div className="grid grid-cols-2 gap-3">
+          <Link href="/progress" className="block bg-gray-800 hover:bg-gray-700 active:bg-gray-600 rounded-2xl p-4 text-center transition-colors">
+            <p className="text-2xl mb-1">📈</p>
+            <p className="font-bold text-sm">推移グラフ</p>
+            <p className="text-xs text-gray-400 mt-0.5">Big3の重量変化</p>
+          </Link>
+          <Link href="/import" className="block bg-gray-800 hover:bg-gray-700 active:bg-gray-600 rounded-2xl p-4 text-center transition-colors">
+            <p className="text-2xl mb-1">📦</p>
+            <p className="font-bold text-sm">一括インポート</p>
+            <p className="text-xs text-gray-400 mt-0.5">過去データを取り込む</p>
+          </Link>
+        </div>
 
         {/* Big3 進捗（中部） */}
         <div className="bg-gray-900 rounded-2xl p-4">
