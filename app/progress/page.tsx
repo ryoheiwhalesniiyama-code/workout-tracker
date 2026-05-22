@@ -38,7 +38,7 @@ export default function ProgressPage() {
   }, [])
 
   const data = progress[selected] ?? []
-  const current = data[data.length - 1]?.weight ?? 0
+  const current = data.length > 0 ? Math.max(...data.map(d => d.weight)) : 0
   const target = TARGETS[selected]
   const color = COLORS[selected]
 
