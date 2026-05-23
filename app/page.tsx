@@ -30,7 +30,10 @@ export default async function HomePage() {
     <div className="min-h-screen bg-gray-950 text-white">
       {/* ヘッダー */}
       <div className="px-4 py-4 border-b border-gray-800 bg-gray-900">
-        <h1 className="text-xl font-bold">💪 Workout Tracker</h1>
+        <h1 className="text-xl font-bold flex items-center gap-2">
+          <img src="/icon.png" alt="icon" className="w-8 h-8 rounded-lg" />
+          Workout Tracker
+        </h1>
         <p className="text-gray-400 text-sm mt-0.5">目標: Big3 370kg total</p>
       </div>
 
