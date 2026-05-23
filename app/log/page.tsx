@@ -12,10 +12,13 @@ export default function LogPage() {
   const [preview, setPreview] = useState<string | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
 
-  // 体組成スクショ（オプション）
-  const [bodyFile, setBodyFile] = useState<File | null>(null)
-  const [bodyPreview, setBodyPreview] = useState<string | null>(null)
-  const [isBodyDragOver, setIsBodyDragOver] = useState(false)
+  // 体組成スクショ（オプション）① 体脂肪 ② 筋肉
+  const [bodyFile1, setBodyFile1] = useState<File | null>(null)
+  const [bodyPreview1, setBodyPreview1] = useState<string | null>(null)
+  const [isBodyDragOver1, setIsBodyDragOver1] = useState(false)
+  const [bodyFile2, setBodyFile2] = useState<File | null>(null)
+  const [bodyPreview2, setBodyPreview2] = useState<string | null>(null)
+  const [isBodyDragOver2, setIsBodyDragOver2] = useState(false)
 
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
@@ -34,19 +37,19 @@ export default function LogPage() {
     setError('')
   }
 
-  const setBodyImageFile = (f: File) => {
-    setBodyFile(f)
-    setBodyPreview(URL.createObjectURL(f))
-  }
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
     if (f) setImageFile(f)
   }
 
-  const handleBodyFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBodyFile1Change = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
-    if (f) setBodyImageFile(f)
+    if (f) { setBodyFile1(f); setBodyPreview1(URL.createObjectURL(f)) }
+  }
+
+  const handleBodyFile2Change = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]
+    if (f) { setBodyFile2(f); setBodyPreview2(URL.createObjectURL(f)) }
   }
 
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -56,11 +59,18 @@ export default function LogPage() {
     if (f && f.type.startsWith('image/')) setImageFile(f)
   }, [])
 
-  const handleBodyDrop = useCallback((e: React.DragEvent) => {
+  const handleBodyDrop1 = useCallback((e: React.DragEvent) => {
     e.preventDefault()
-    setIsBodyDragOver(false)
+    setIsBodyDragOver1(false)
     const f = e.dataTransfer.files?.[0]
-    if (f && f.type.startsWith('image/')) setBodyImageFile(f)
+    if (f && f.type.startsWith('image/')) { setBodyFile1(f); setBodyPreview1(URL.createObjectURL(f)) }
+  }, [])
+
+  const handleBodyDrop2 = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setIsBodyDragOver2(false)
+    const f = e.dataTransfer.files?.[0]
+    if (f && f.type.startsWith('image/')) { setBodyFile2(f); setBodyPreview2(URL.createObjectURL(f)) }
   }, [])
 
   const handleUpload = async () => {
@@ -99,10 +109,11 @@ export default function LogPage() {
         })
       }
 
-      // 体組成スクショがあれば保存
-      if (bodyFile) {
+      // 体組成スクショがあれば保存（① 体脂肪 + ② 筋肉）
+      if (bodyFile1 || bodyFile2) {
         const bodyFormData = new FormData()
-        bodyFormData.append('file', bodyFile)
+        if (bodyFile1) bodyFormData.append('file1', bodyFile1)
+        if (bodyFile2) bodyFormData.append('file2', bodyFile2)
         bodyFormData.append('date', date)
         await fetch('/api/body-composition', { method: 'POST', body: bodyFormData })
       }
@@ -134,52 +145,79 @@ export default function LogPage() {
           />
         </div>
 
-        {/* スクショ2列 */}
-        <div className="grid grid-cols-2 gap-3">
-          {/* 筋トレMEMO */}
-          <div>
-            <label className="text-xs text-gray-400 block mb-1">筋トレMEMO</label>
+        {/* 筋トレMEMO */}
+        <div>
+          <label className="text-xs text-gray-400 block mb-1">筋トレMEMO</label>
+          <div
+            onDrop={handleDrop}
+            onDragOver={e => { e.preventDefault(); setIsDragOver(true) }}
+            onDragLeave={() => setIsDragOver(false)}
+            className={`border-2 border-dashed rounded-xl transition-colors ${
+              isDragOver ? 'border-blue-400 bg-blue-950/30' : 'border-gray-700'
+            }`}
+          >
+            <label className="block p-4 text-center cursor-pointer min-h-[100px] flex items-center justify-center">
+              <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+              {preview ? (
+                <img src={preview} alt="preview" className="max-h-32 rounded-lg" />
+              ) : (
+                <div className="text-gray-500">
+                  <p className="text-2xl mb-1">📷</p>
+                  <p className="text-xs">タップ / ドロップ</p>
+                </div>
+              )}
+            </label>
+          </div>
+        </div>
+
+        {/* 体組成（任意）① 体脂肪 ② 筋肉 */}
+        <div>
+          <label className="text-xs text-gray-400 block mb-1">
+            体組成（任意）
+            <span className="text-gray-600 ml-1">— タニタ①体脂肪 + ②筋肉の2枚</span>
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            {/* ① 体脂肪画面 */}
             <div
-              onDrop={handleDrop}
-              onDragOver={e => { e.preventDefault(); setIsDragOver(true) }}
-              onDragLeave={() => setIsDragOver(false)}
+              onDrop={handleBodyDrop1}
+              onDragOver={e => { e.preventDefault(); setIsBodyDragOver1(true) }}
+              onDragLeave={() => setIsBodyDragOver1(false)}
               className={`border-2 border-dashed rounded-xl transition-colors ${
-                isDragOver ? 'border-blue-400 bg-blue-950/30' : 'border-gray-700'
+                isBodyDragOver1 ? 'border-green-400 bg-green-950/30' : 'border-gray-700'
               }`}
             >
-              <label className="block p-4 text-center cursor-pointer min-h-[100px] flex items-center justify-center">
-                <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
-                {preview ? (
-                  <img src={preview} alt="preview" className="max-h-32 rounded-lg" />
+              <label className="block p-3 text-center cursor-pointer min-h-[90px] flex flex-col items-center justify-center">
+                <input type="file" accept="image/*" onChange={handleBodyFile1Change} className="hidden" />
+                {bodyPreview1 ? (
+                  <img src={bodyPreview1} alt="体脂肪" className="max-h-24 rounded-lg" />
                 ) : (
                   <div className="text-gray-500">
-                    <p className="text-2xl mb-1">📷</p>
-                    <p className="text-xs">タップ / ドロップ</p>
+                    <p className="text-xl mb-1">①</p>
+                    <p className="text-xs font-medium text-gray-400">体脂肪</p>
+                    <p className="text-xs text-gray-600 mt-0.5">体重・脂肪率</p>
                   </div>
                 )}
               </label>
             </div>
-          </div>
 
-          {/* 体組成（オプション） */}
-          <div>
-            <label className="text-xs text-gray-400 block mb-1">体組成（任意）</label>
+            {/* ② 筋肉画面 */}
             <div
-              onDrop={handleBodyDrop}
-              onDragOver={e => { e.preventDefault(); setIsBodyDragOver(true) }}
-              onDragLeave={() => setIsBodyDragOver(false)}
+              onDrop={handleBodyDrop2}
+              onDragOver={e => { e.preventDefault(); setIsBodyDragOver2(true) }}
+              onDragLeave={() => setIsBodyDragOver2(false)}
               className={`border-2 border-dashed rounded-xl transition-colors ${
-                isBodyDragOver ? 'border-green-400 bg-green-950/30' : 'border-gray-700'
+                isBodyDragOver2 ? 'border-green-400 bg-green-950/30' : 'border-gray-700'
               }`}
             >
-              <label className="block p-4 text-center cursor-pointer min-h-[100px] flex items-center justify-center">
-                <input type="file" accept="image/*" onChange={handleBodyFileChange} className="hidden" />
-                {bodyPreview ? (
-                  <img src={bodyPreview} alt="body preview" className="max-h-32 rounded-lg" />
+              <label className="block p-3 text-center cursor-pointer min-h-[90px] flex flex-col items-center justify-center">
+                <input type="file" accept="image/*" onChange={handleBodyFile2Change} className="hidden" />
+                {bodyPreview2 ? (
+                  <img src={bodyPreview2} alt="筋肉" className="max-h-24 rounded-lg" />
                 ) : (
                   <div className="text-gray-500">
-                    <p className="text-2xl mb-1">⚖️</p>
-                    <p className="text-xs">タニタ等の画面</p>
+                    <p className="text-xl mb-1">②</p>
+                    <p className="text-xs font-medium text-gray-400">筋肉</p>
+                    <p className="text-xs text-gray-600 mt-0.5">筋肉量(kg)</p>
                   </div>
                 )}
               </label>
@@ -236,7 +274,11 @@ export default function LogPage() {
                 <span className="font-medium">{ex.name}</span>: {ex.sets?.length}セット
               </div>
             ))}
-            {bodyFile && <p className="text-xs text-green-300 mt-1">⚖️ 体組成データも保存しました</p>}
+            {(bodyFile1 || bodyFile2) && (
+              <p className="text-xs text-green-300 mt-1">
+                ⚖️ 体組成データも保存しました（{[bodyFile1 && '①体脂肪', bodyFile2 && '②筋肉'].filter(Boolean).join(' + ')}）
+              </p>
+            )}
             <div className="flex gap-2 mt-3">
               <button onClick={() => router.push('/chat')}
                 className="flex-1 bg-blue-600 hover:bg-blue-500 rounded-lg py-2 text-sm font-medium transition-colors">
