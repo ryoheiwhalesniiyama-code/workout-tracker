@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 
 type Message = {
   role: 'user' | 'assistant'
@@ -54,12 +54,12 @@ export default function ChatPage() {
     }
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      sendMessage()
-    }
-  }
+  const handleFocus = useCallback(() => {
+    // キーボードが出た後にスクロールして入力欄を見えるようにする
+    setTimeout(() => {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }, 300)
+  }, [])
 
   return (
     <div className="flex flex-col h-screen bg-gray-950 text-white">
@@ -112,7 +112,7 @@ export default function ChatPage() {
             placeholder="メッセージを入力..."
             value={input}
             onChange={e => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
+            onFocus={handleFocus}
             rows={1}
           />
           <button
@@ -123,7 +123,7 @@ export default function ChatPage() {
             ↑
           </button>
         </div>
-        <p className="text-xs text-gray-600 mt-1 text-center">Enterで送信 / Shift+Enterで改行</p>
+        <p className="text-xs text-gray-600 mt-1 text-center">右の↑ボタンで送信</p>
       </div>
     </div>
   )

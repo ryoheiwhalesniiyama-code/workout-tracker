@@ -16,7 +16,7 @@ export default async function HomePage() {
   const { sets, latestMetric } = await getData()
 
   const getPR = (exercise: string) => {
-    const filtered = sets.filter(s => s.exercise_name === exercise)
+    const filtered = sets.filter(s => s.exercise_name === exercise && s.reps > 0)
     if (filtered.length === 0) return null
     return Math.max(...filtered.map(s => s.weight))
   }
@@ -98,8 +98,11 @@ export default async function HomePage() {
 
         {/* 体組成 */}
         {latestMetric && (
-          <div className="bg-gray-900 rounded-2xl p-4">
-            <h2 className="font-bold mb-3 text-gray-200">最新の体組成</h2>
+          <Link href="/body-metrics" className="block bg-gray-900 rounded-2xl p-4 hover:bg-gray-800 transition-colors">
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="font-bold text-gray-200">最新の体組成</h2>
+              <span className="text-xs text-gray-500">推移グラフ →</span>
+            </div>
             <div className="grid grid-cols-3 gap-3">
               {[
                 { label: '体重', value: latestMetric.body_weight, unit: 'kg' },
@@ -112,7 +115,7 @@ export default async function HomePage() {
                 </div>
               ))}
             </div>
-          </div>
+          </Link>
         )}
 
         {/* トレーニング履歴（下部） */}
