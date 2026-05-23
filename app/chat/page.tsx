@@ -13,6 +13,7 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     const loadHistory = async () => {
@@ -31,11 +32,23 @@ export default function ChatPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value)
+    // 高さを内容に合わせて自動調整
+    const ta = e.target
+    ta.style.height = 'auto'
+    ta.style.height = `${ta.scrollHeight}px`
+  }
+
   const sendMessage = async () => {
     if (!input.trim() || loading) return
 
     const userMessage = input.trim()
     setInput('')
+    // 送信後に高さをリセット
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+    }
     setMessages(prev => [...prev, { role: 'user', content: userMessage }])
     setLoading(true)
 
@@ -108,12 +121,14 @@ export default function ChatPage() {
       <div className="px-4 py-3 border-t border-gray-800 bg-gray-900">
         <div className="flex gap-2 items-end">
           <textarea
-            className="flex-1 bg-gray-800 rounded-2xl px-4 py-3 text-sm resize-none outline-none focus:ring-1 focus:ring-blue-500 max-h-32"
+            ref={textareaRef}
+            className="flex-1 bg-gray-800 rounded-2xl px-4 py-3 text-sm resize-none outline-none focus:ring-1 focus:ring-blue-500 max-h-40 overflow-y-auto"
             placeholder="メッセージを入力..."
             value={input}
-            onChange={e => setInput(e.target.value)}
+            onChange={handleInputChange}
             onFocus={handleFocus}
             rows={1}
+            style={{ height: 'auto' }}
           />
           <button
             onClick={sendMessage}
