@@ -31,6 +31,7 @@ export default function BodyMetricsPage() {
         setMetrics(data.metrics ?? [])
         setLoading(false)
       })
+      .catch(() => setLoading(false))
   }, [])
 
   const selectedMeta = METRICS.find(m => m.key === selected)!
@@ -135,6 +136,18 @@ export default function BodyMetricsPage() {
             </ResponsiveContainer>
           )}
         </div>
+
+        {/* データなし */}
+        {!loading && metrics.length === 0 && (
+          <div className="bg-gray-900 rounded-2xl p-6 text-center">
+            <p className="text-4xl mb-3">⚖️</p>
+            <p className="text-gray-400 text-sm">体組成データがまだありません</p>
+            <p className="text-gray-600 text-xs mt-2">ログ記録画面でタニタの①体脂肪・②筋肉画面をアップロードしてください</p>
+            <Link href="/log" className="inline-block mt-4 bg-blue-600 hover:bg-blue-500 rounded-xl px-4 py-2 text-sm font-medium transition-colors">
+              ログを記録する
+            </Link>
+          </div>
+        )}
 
         {/* 記録一覧 */}
         {metrics.length > 0 && (

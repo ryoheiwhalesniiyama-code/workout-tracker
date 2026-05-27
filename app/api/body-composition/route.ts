@@ -69,14 +69,20 @@ export async function POST(req: NextRequest) {
     if (body_weight === null) body_weight = result.body_weight ?? null
   }
 
-  const { error } = await supabaseAdmin.from('body_metrics').upsert({
+  // 同日データがあれば先に削除してから挿入（onConflict が効かない場合の対策）
+  await supabaseAdmin.from('body_metrics').delete().eq('date', dateStr)
+
+  const { error } = await supabaseAdmin.from('body_metrics').insert({
     date: dateStr,
     body_weight,
     body_fat_percent,
     muscle_mass,
-  }, { onConflict: 'date' })
+  })
 
-  if (error) return NextResponse.json({ error: '保存に失敗しました' }, { status: 500 })
+  if (error) {
+    console.error('body_metrics insert error:', error)
+    return NextResponse.json({ error: `保存に失敗しました: ${error.message}` }, { status: 500 })
+  }
 
   return NextResponse.json({
     success: true,

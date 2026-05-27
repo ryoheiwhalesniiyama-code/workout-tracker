@@ -115,7 +115,12 @@ export default function LogPage() {
         if (bodyFile1) bodyFormData.append('file1', bodyFile1)
         if (bodyFile2) bodyFormData.append('file2', bodyFile2)
         bodyFormData.append('date', date)
-        await fetch('/api/body-composition', { method: 'POST', body: bodyFormData })
+        const bodyRes = await fetch('/api/body-composition', { method: 'POST', body: bodyFormData })
+        const bodyData = await bodyRes.json()
+        if (bodyData.error) {
+          console.error('体組成保存エラー:', bodyData.error)
+          // ワークアウト自体は保存済みなので致命的エラーにはしない
+        }
       }
 
       setResult(data.data)

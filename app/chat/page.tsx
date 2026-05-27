@@ -75,8 +75,8 @@ export default function ChatPage() {
   }, [])
 
   return (
-    <div className="flex flex-col h-screen bg-gray-950 text-white">
-      <div className="flex items-center px-4 py-3 border-b border-gray-800 bg-gray-900">
+    <div className="flex flex-col bg-gray-950 text-white" style={{ height: '100dvh' }}>
+      <div className="sticky top-0 z-10 flex items-center px-4 py-3 border-b border-gray-800 bg-gray-900 flex-shrink-0">
         <a href="/" className="text-gray-400 mr-3 text-xl">←</a>
         <div>
           <h1 className="font-bold text-lg">AIコーチ</h1>
@@ -118,7 +118,7 @@ export default function ChatPage() {
         <div ref={bottomRef} />
       </div>
 
-      <div className="px-4 py-3 border-t border-gray-800 bg-gray-900">
+      <div className="px-4 py-3 border-t border-gray-800 bg-gray-900 flex-shrink-0">
         <div className="flex gap-2 items-end">
           <textarea
             ref={textareaRef}
