@@ -23,6 +23,7 @@ export default function LogPage() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
   const [error, setError] = useState('')
+  const [bodyError, setBodyError] = useState('')
 
   const [sleepHours, setSleepHours] = useState('')
   const [fatigueLevel, setFatigueLevel] = useState('')
@@ -111,15 +112,19 @@ export default function LogPage() {
 
       // 体組成スクショがあれば保存（① 体脂肪 + ② 筋肉）
       if (bodyFile1 || bodyFile2) {
-        const bodyFormData = new FormData()
-        if (bodyFile1) bodyFormData.append('file1', bodyFile1)
-        if (bodyFile2) bodyFormData.append('file2', bodyFile2)
-        bodyFormData.append('date', date)
-        const bodyRes = await fetch('/api/body-composition', { method: 'POST', body: bodyFormData })
-        const bodyData = await bodyRes.json()
-        if (bodyData.error) {
-          console.error('体組成保存エラー:', bodyData.error)
-          // ワークアウト自体は保存済みなので致命的エラーにはしない
+        setBodyError('')
+        try {
+          const bodyFormData = new FormData()
+          if (bodyFile1) bodyFormData.append('file1', bodyFile1)
+          if (bodyFile2) bodyFormData.append('file2', bodyFile2)
+          bodyFormData.append('date', date)
+          const bodyRes = await fetch('/api/body-composition', { method: 'POST', body: bodyFormData })
+          const bodyData = await bodyRes.json()
+          if (bodyData.error) {
+            setBodyError(`体組成: ${bodyData.error}`)
+          }
+        } catch (e) {
+          setBodyError('体組成画像の送信に失敗しました')
         }
       }
 
@@ -279,10 +284,13 @@ export default function LogPage() {
                 <span className="font-medium">{ex.name}</span>: {ex.sets?.length}セット
               </div>
             ))}
-            {(bodyFile1 || bodyFile2) && (
+            {(bodyFile1 || bodyFile2) && !bodyError && (
               <p className="text-xs text-green-300 mt-1">
                 ⚖️ 体組成データも保存しました（{[bodyFile1 && '①体脂肪', bodyFile2 && '②筋肉'].filter(Boolean).join(' + ')}）
               </p>
+            )}
+            {bodyError && (
+              <p className="text-xs text-red-400 mt-1">⚠️ {bodyError}</p>
             )}
             <div className="flex gap-2 mt-3">
               <button onClick={() => router.push('/chat')}
