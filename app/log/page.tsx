@@ -74,45 +74,53 @@ export default function LogPage() {
     if (f && f.type.startsWith('image/')) { setBodyFile2(f); setBodyPreview2(URL.createObjectURL(f)) }
   }, [])
 
+  // 何かしら保存できるものがあるか
+  const canSave = !!(file || bodyFile1 || bodyFile2)
+
   const handleUpload = async () => {
-    if (!file || !date) return
+    if (!canSave || !date) return
     setLoading(true)
     setError('')
+    setBodyError('')
 
     try {
-      // ワークアウトログ保存
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('date', date)
-      if (notes) formData.append('notes', notes)
+      let workoutData: any = null
 
-      const res = await fetch('/api/upload', { method: 'POST', body: formData })
-      const data = await res.json()
+      // ワークアウト画像がある場合のみログ保存
+      if (file) {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('date', date)
+        if (notes) formData.append('notes', notes)
 
-      if (data.error) {
-        setError(data.error)
-        return
-      }
+        const res = await fetch('/api/upload', { method: 'POST', body: formData })
+        const data = await res.json()
 
-      // コンディション追加保存
-      if (sleepHours || fatigueLevel || motivation || bodyWeight || notes) {
-        await fetch('/api/workout-detail', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            logId: data.logId,
-            sleepHours: sleepHours ? Number(sleepHours) : null,
-            fatigueLevel: fatigueLevel ? Number(fatigueLevel) : null,
-            motivation: motivation ? Number(motivation) : null,
-            bodyWeight: bodyWeight ? Number(bodyWeight) : null,
-            notes
+        if (data.error) {
+          setError(data.error)
+          return
+        }
+        workoutData = data
+
+        // コンディション追加保存
+        if (sleepHours || fatigueLevel || motivation || bodyWeight || notes) {
+          await fetch('/api/workout-detail', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              logId: data.logId,
+              sleepHours: sleepHours ? Number(sleepHours) : null,
+              fatigueLevel: fatigueLevel ? Number(fatigueLevel) : null,
+              motivation: motivation ? Number(motivation) : null,
+              bodyWeight: bodyWeight ? Number(bodyWeight) : null,
+              notes
+            })
           })
-        })
+        }
       }
 
       // 体組成スクショがあれば保存（① 体脂肪 + ② 筋肉）
       if (bodyFile1 || bodyFile2) {
-        setBodyError('')
         try {
           const bodyFormData = new FormData()
           if (bodyFile1) bodyFormData.append('file1', bodyFile1)
@@ -123,12 +131,13 @@ export default function LogPage() {
           if (bodyData.error) {
             setBodyError(`体組成: ${bodyData.error}`)
           }
-        } catch (e) {
+        } catch {
           setBodyError('体組成画像の送信に失敗しました')
         }
       }
 
-      setResult(data.data)
+      // 体組成だけの場合はダミーの result をセット
+      setResult(workoutData?.data ?? { bodyOnly: true })
     } catch {
       setError('アップロードに失敗しました')
     } finally {
@@ -279,11 +288,15 @@ export default function LogPage() {
         {result && (
           <div className="bg-green-900/30 border border-green-700 rounded-xl p-4">
             <p className="text-green-400 font-medium mb-2">✅ 保存しました！</p>
-            {result.exercises?.map((ex: any, i: number) => (
-              <div key={i} className="text-sm text-gray-300 mb-1">
-                <span className="font-medium">{ex.name}</span>: {ex.sets?.length}セット
-              </div>
-            ))}
+            {result.bodyOnly ? (
+              <p className="text-sm text-gray-300">体組成データを記録しました</p>
+            ) : (
+              result.exercises?.map((ex: any, i: number) => (
+                <div key={i} className="text-sm text-gray-300 mb-1">
+                  <span className="font-medium">{ex.name}</span>: {ex.sets?.length}セット
+                </div>
+              ))
+            )}
             {(bodyFile1 || bodyFile2) && !bodyError && (
               <p className="text-xs text-green-300 mt-1">
                 ⚖️ 体組成データも保存しました（{[bodyFile1 && '①体脂肪', bodyFile2 && '②筋肉'].filter(Boolean).join(' + ')}）
@@ -309,10 +322,14 @@ export default function LogPage() {
         {!result && (
           <button
             onClick={handleUpload}
-            disabled={!file || loading}
+            disabled={!canSave || loading}
             className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 disabled:text-gray-500 rounded-xl py-4 font-bold transition-colors"
           >
-            {loading ? '解析中...' : '保存する'}
+            {loading
+              ? '解析中...'
+              : file
+              ? '保存する'
+              : '体組成を保存する'}
           </button>
         )}
       </div>
