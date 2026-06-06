@@ -62,7 +62,6 @@ ${log.sets ? log.sets.map((s: any) => `- ${s.exercise_name}: ${s.weight}kg × ${
 ${bodyMetrics.length === 0 ? 'まだデータなし' : bodyMetrics.map(m => `
 ## ${m.date}
 体重: ${m.body_weight ?? '-'}kg / 筋肉量: ${m.muscle_mass ?? '-'}kg / 体脂肪率: ${m.body_fat_percent ?? '-'}%
-胸囲: ${m.chest ?? '-'}cm / 上腕: ${m.upper_arm ?? '-'}cm / ウエスト: ${m.waist ?? '-'}cm
 `).join('\n')}
 
 ---

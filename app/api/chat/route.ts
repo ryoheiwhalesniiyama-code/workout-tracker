@@ -3,6 +3,8 @@ import Anthropic from '@anthropic-ai/sdk'
 import { supabaseAdmin } from '@/lib/supabase'
 import { buildSystemPrompt } from '@/lib/systemPrompt'
 
+export const maxDuration = 60 // Vercel Pro: 60s / Hobby: 10s (ベストエフォート)
+
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!
 })
@@ -10,7 +12,7 @@ const anthropic = new Anthropic({
 export async function POST(req: NextRequest) {
   const { message } = await req.json()
 
-  // 過去データを全件取得
+  // 過去データを取得（ログは直近30件に絞ってトークン節約）
   const [
     { data: workoutLogs },
     { data: sets },
@@ -18,18 +20,20 @@ export async function POST(req: NextRequest) {
     { data: fatigueNotes },
     { data: chatHistory }
   ] = await Promise.all([
-    supabaseAdmin.from('workout_logs').select('*').order('date', { ascending: true }),
+    supabaseAdmin.from('workout_logs').select('*').order('date', { ascending: false }).limit(30),
     supabaseAdmin.from('workout_sets').select('*').order('set_number', { ascending: true }),
-    supabaseAdmin.from('body_metrics').select('*').order('date', { ascending: true }),
-    supabaseAdmin.from('fatigue_notes').select('*').order('date', { ascending: true }),
-    supabaseAdmin.from('chat_messages').select('*').order('created_at', { ascending: true }).limit(50)
+    supabaseAdmin.from('body_metrics').select('*').order('date', { ascending: false }).limit(20),
+    supabaseAdmin.from('fatigue_notes').select('*').order('date', { ascending: false }).limit(10),
+    supabaseAdmin.from('chat_messages').select('*').order('created_at', { ascending: true }).limit(20)
   ])
 
-  // セットをワークアウトログに紐付け
-  const logsWithSets = (workoutLogs ?? []).map(log => ({
-    ...log,
-    sets: (sets ?? []).filter(s => s.workout_log_id === log.id)
-  }))
+  // セットをワークアウトログに紐付け（日付昇順に戻す）
+  const logsWithSets = (workoutLogs ?? [])
+    .map(log => ({
+      ...log,
+      sets: (sets ?? []).filter(s => s.workout_log_id === log.id)
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date))
 
   // システムプロンプト構築
   const systemPrompt = buildSystemPrompt({
@@ -47,10 +51,10 @@ export async function POST(req: NextRequest) {
     { role: 'user', content: message }
   ]
 
-  // Claude API 呼び出し
+  // Claude API 呼び出し（sonnet: opusより3〜4倍速くタイムアウト対策）
   const response = await anthropic.messages.create({
-    model: 'claude-opus-4-5',
-    max_tokens: 2048,
+    model: 'claude-sonnet-4-5',
+    max_tokens: 1024,
     system: systemPrompt,
     messages
   })
