@@ -59,9 +59,15 @@ export default function ChatPage() {
         body: JSON.stringify({ message: userMessage })
       })
       const data = await res.json()
-      setMessages(prev => [...prev, { role: 'assistant', content: data.message }])
-    } catch {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'エラーが発生しました。もう一度試してください。' }])
+      if (data.error) {
+        // APIエラーの場合は内容を表示（デバッグ用）
+        setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ エラー: ${data.error}` }])
+      } else {
+        setMessages(prev => [...prev, { role: 'assistant', content: data.message }])
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ 通信エラー: ${msg}` }])
     } finally {
       setLoading(false)
     }
