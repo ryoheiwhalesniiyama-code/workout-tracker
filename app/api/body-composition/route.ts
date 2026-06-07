@@ -28,7 +28,7 @@ async function extractFromImage(file: File, prompt: string): Promise<Record<stri
     const mediaType = getSupportedMediaType(file.type)
 
     const response = await anthropic.messages.create({
-      model: 'claude-haiku-4-5',  // 数字読み取りはhaikuで十分・高速
+      model: 'claude-sonnet-4-5',  // haikuは複雑レイアウトの読み取りが不正確
       max_tokens: 256,
       messages: [{
         role: 'user',
@@ -66,14 +66,22 @@ export async function POST(req: NextRequest) {
     const empty: Record<string, number | null> = {}
     const [result1, result2] = await Promise.all([
       file1 ? extractFromImage(file1,
-        `タニタ体組成計の「体脂肪」画面です。右側パネルの数値を読み取ってください。
-右側上部に「Weight NET」と体重(kg)、その下に体脂肪率(%)が表示されています。
-数値のみをJSON形式で返してください:
+        `これはタニタ体組成計MC-780A-Nの「体脂肪」モード画面です。
+画面は左右2つのパネルに分かれています。
+【右側パネル（小さい液晶）から以下の数値を読み取ってください】
+- 右上: "Weight NET" の右の大きな数字 = 体重(kg)
+- 右中: 体重の下にある数字(%) = 体脂肪率
+※左パネルの部位別数値（TRUNK/ARM/LEG）は無視してください
+JSON形式のみで返答:
 {"body_weight": 体重の数値, "body_fat_percent": 体脂肪率の数値}`) : Promise.resolve(empty),
       file2 ? extractFromImage(file2,
-        `タニタ体組成計の「筋肉」画面です。右側パネルの数値を読み取ってください。
-右側上部に「Weight NET」と体重(kg)、その下に筋肉量合計(kg)が表示されています。
-数値のみをJSON形式で返してください:
+        `これはタニタ体組成計MC-780A-Nの「筋肉」モード画面です。
+画面は左右2つのパネルに分かれています。
+【右側パネル（小さい液晶）から以下の数値を読み取ってください】
+- 右上: "Weight NET" の右の大きな数字 = 体重(kg)
+- 右下: 体重の下にある大きな数字(kg) = 全身の筋肉量合計
+※左パネルの部位別数値（TRUNK/ARM/LEG）は無視してください
+JSON形式のみで返答:
 {"body_weight": 体重の数値, "muscle_mass": 筋肉量合計の数値}`) : Promise.resolve(empty)
     ])
 
