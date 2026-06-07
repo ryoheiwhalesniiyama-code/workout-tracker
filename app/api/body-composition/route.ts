@@ -86,14 +86,17 @@ JSON形式のみで返答:
     ])
 
     // 結果をマージ
+    // 体重: 筋肉画面(result2)の読み取りが正確なのでそちらを優先、なければ体脂肪画面(result1)
+    // 体脂肪率: 体脂肪画面(result1)のみ
+    // 筋肉量: 筋肉画面(result2)のみ
     let body_weight: number | null = null
     let body_fat_percent: number | null = null
     let muscle_mass: number | null = null
 
-    if (typeof result1.body_weight === 'number') body_weight = result1.body_weight
+    if (typeof result2.body_weight === 'number') body_weight = result2.body_weight
+    else if (typeof result1.body_weight === 'number') body_weight = result1.body_weight
     if (typeof result1.body_fat_percent === 'number') body_fat_percent = result1.body_fat_percent
     if (typeof result2.muscle_mass === 'number') muscle_mass = result2.muscle_mass
-    if (body_weight === null && typeof result2.body_weight === 'number') body_weight = result2.body_weight
 
     console.log('Extracted:', { body_weight, body_fat_percent, muscle_mass, date: dateStr })
 
