@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { supabaseAdmin } from '@/lib/supabase'
 
+export const maxDuration = 60
+
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
 type SupportedMediaType = 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif'
@@ -13,7 +15,7 @@ function getSupportedMediaType(fileType: string): SupportedMediaType {
     'image/png': 'image/png',
     'image/webp': 'image/webp',
     'image/gif': 'image/gif',
-    'image/heic': 'image/jpeg',  // HEICはJPEGとして扱う（変換は難しいが最低限通す）
+    'image/heic': 'image/jpeg',
     'image/heif': 'image/jpeg',
   }
   return map[fileType.toLowerCase()] ?? 'image/jpeg'
@@ -26,8 +28,8 @@ async function extractFromImage(file: File, prompt: string): Promise<Record<stri
     const mediaType = getSupportedMediaType(file.type)
 
     const response = await anthropic.messages.create({
-      model: 'claude-opus-4-5',
-      max_tokens: 512,
+      model: 'claude-haiku-4-5',  // 数字読み取りはhaikuで十分・高速
+      max_tokens: 256,
       messages: [{
         role: 'user',
         content: [
@@ -60,55 +62,43 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '日付が指定されていません' }, { status: 400 })
     }
 
+    // ① と ② を並列処理（直列だと倍の時間がかかるため）
+    const [result1, result2] = await Promise.all([
+      file1 ? extractFromImage(file1,
+        `タニタ体組成計の「体脂肪」画面です。右側パネルの数値を読み取ってください。
+右側上部に「Weight NET」と体重(kg)、その下に体脂肪率(%)が表示されています。
+数値のみをJSON形式で返してください:
+{"body_weight": 体重の数値, "body_fat_percent": 体脂肪率の数値}`) : Promise.resolve({}),
+      file2 ? extractFromImage(file2,
+        `タニタ体組成計の「筋肉」画面です。右側パネルの数値を読み取ってください。
+右側上部に「Weight NET」と体重(kg)、その下に筋肉量合計(kg)が表示されています。
+数値のみをJSON形式で返してください:
+{"body_weight": 体重の数値, "muscle_mass": 筋肉量合計の数値}`) : Promise.resolve({})
+    ])
+
+    // 結果をマージ
     let body_weight: number | null = null
     let body_fat_percent: number | null = null
     let muscle_mass: number | null = null
 
-    // ① 体脂肪画面 → 体重・体脂肪率を取得
-    if (file1) {
-      const result = await extractFromImage(file1,
-        `タニタ体組成計の「体脂肪」画面です。右側パネルの数値を読み取ってください。
-右側上部に「Weight NET」と体重(kg)、その下に体脂肪率(%)が表示されています。
-数値のみをJSON形式で返してください:
-{"body_weight": 体重の数値, "body_fat_percent": 体脂肪率の数値}`)
-      if (typeof result.body_weight === 'number') body_weight = result.body_weight
-      if (typeof result.body_fat_percent === 'number') body_fat_percent = result.body_fat_percent
-    }
-
-    // ② 筋肉画面 → 筋肉量を取得
-    if (file2) {
-      const result = await extractFromImage(file2,
-        `タニタ体組成計の「筋肉」画面です。右側パネルの数値を読み取ってください。
-右側上部に「Weight NET」と体重(kg)、その下に筋肉量合計(kg)が表示されています。
-数値のみをJSON形式で返してください:
-{"body_weight": 体重の数値, "muscle_mass": 筋肉量合計の数値}`)
-      if (typeof result.muscle_mass === 'number') muscle_mass = result.muscle_mass
-      if (body_weight === null && typeof result.body_weight === 'number') body_weight = result.body_weight
-    }
+    if (typeof result1.body_weight === 'number') body_weight = result1.body_weight
+    if (typeof result1.body_fat_percent === 'number') body_fat_percent = result1.body_fat_percent
+    if (typeof result2.muscle_mass === 'number') muscle_mass = result2.muscle_mass
+    if (body_weight === null && typeof result2.body_weight === 'number') body_weight = result2.body_weight
 
     console.log('Extracted:', { body_weight, body_fat_percent, muscle_mass, date: dateStr })
 
     // 同日データがあれば削除してから挿入
-    const { error: deleteError } = await supabaseAdmin
-      .from('body_metrics')
-      .delete()
-      .eq('date', dateStr)
+    await supabaseAdmin.from('body_metrics').delete().eq('date', dateStr)
 
-    if (deleteError) {
-      console.error('delete error:', deleteError)
-      // 削除失敗は無視して insert を試みる
-    }
-
-    const { data: inserted, error: insertError } = await supabaseAdmin
+    const { error: insertError } = await supabaseAdmin
       .from('body_metrics')
       .insert({ date: dateStr, body_weight, body_fat_percent, muscle_mass })
-      .select()
 
     if (insertError) {
       console.error('insert error:', insertError)
       return NextResponse.json({
-        error: `DB保存エラー: ${insertError.message}`,
-        debug: { body_weight, body_fat_percent, muscle_mass, date: dateStr }
+        error: `DB保存エラー: ${insertError.message}`
       }, { status: 500 })
     }
 
