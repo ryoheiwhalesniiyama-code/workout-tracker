@@ -3,6 +3,30 @@
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 
+// 画像を圧縮してサイズを削減（タイムアウト対策）
+async function compressImage(file: File, maxWidth = 1200, quality = 0.75): Promise<File> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      const ratio = Math.min(maxWidth / img.width, maxWidth / img.height, 1)
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.round(img.width * ratio)
+      canvas.height = Math.round(img.height * ratio)
+      const ctx = canvas.getContext('2d')!
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+      canvas.toBlob(
+        blob => resolve(new File([blob!], file.name, { type: 'image/jpeg' })),
+        'image/jpeg',
+        quality
+      )
+    }
+    img.onerror = () => resolve(file) // 圧縮失敗時はそのまま使う
+    img.src = url
+  })
+}
+
 export default function LogPage() {
   const router = useRouter()
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
@@ -43,14 +67,22 @@ export default function LogPage() {
     if (f) setImageFile(f)
   }
 
-  const handleBodyFile1Change = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBodyFile1Change = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
-    if (f) { setBodyFile1(f); setBodyPreview1(URL.createObjectURL(f)) }
+    if (f) {
+      setBodyPreview1(URL.createObjectURL(f)) // プレビューは元画像でOK
+      const compressed = await compressImage(f)
+      setBodyFile1(compressed)
+    }
   }
 
-  const handleBodyFile2Change = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBodyFile2Change = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
-    if (f) { setBodyFile2(f); setBodyPreview2(URL.createObjectURL(f)) }
+    if (f) {
+      setBodyPreview2(URL.createObjectURL(f))
+      const compressed = await compressImage(f)
+      setBodyFile2(compressed)
+    }
   }
 
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -60,18 +92,26 @@ export default function LogPage() {
     if (f && f.type.startsWith('image/')) setImageFile(f)
   }, [])
 
-  const handleBodyDrop1 = useCallback((e: React.DragEvent) => {
+  const handleBodyDrop1 = useCallback(async (e: React.DragEvent) => {
     e.preventDefault()
     setIsBodyDragOver1(false)
     const f = e.dataTransfer.files?.[0]
-    if (f && f.type.startsWith('image/')) { setBodyFile1(f); setBodyPreview1(URL.createObjectURL(f)) }
+    if (f && f.type.startsWith('image/')) {
+      setBodyPreview1(URL.createObjectURL(f))
+      const compressed = await compressImage(f)
+      setBodyFile1(compressed)
+    }
   }, [])
 
-  const handleBodyDrop2 = useCallback((e: React.DragEvent) => {
+  const handleBodyDrop2 = useCallback(async (e: React.DragEvent) => {
     e.preventDefault()
     setIsBodyDragOver2(false)
     const f = e.dataTransfer.files?.[0]
-    if (f && f.type.startsWith('image/')) { setBodyFile2(f); setBodyPreview2(URL.createObjectURL(f)) }
+    if (f && f.type.startsWith('image/')) {
+      setBodyPreview2(URL.createObjectURL(f))
+      const compressed = await compressImage(f)
+      setBodyFile2(compressed)
+    }
   }, [])
 
   // 何かしら保存できるものがあるか
