@@ -5,7 +5,7 @@ export async function GET() {
   const [{ data: sets }, { data: logs }] = await Promise.all([
     supabaseAdmin
       .from('workout_sets')
-      .select('exercise_name, weight, workout_log_id')
+      .select('exercise_name, weight, reps, workout_log_id')
       .in('exercise_name', ['ベンチプレス', 'スクワット', 'デッドリフト']),
     supabaseAdmin
       .from('workout_logs')
@@ -25,6 +25,7 @@ export async function GET() {
   for (const set of sets ?? []) {
     const date = logDateMap[set.workout_log_id]
     if (!date) continue
+    if (!set.reps || set.reps === 0) continue  // 0repは除外
     if (!progressMap[set.exercise_name][date] || progressMap[set.exercise_name][date] < set.weight) {
       progressMap[set.exercise_name][date] = set.weight
     }
