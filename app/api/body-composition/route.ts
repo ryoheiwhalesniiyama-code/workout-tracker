@@ -63,17 +63,18 @@ export async function POST(req: NextRequest) {
     }
 
     // ① と ② を並列処理（直列だと倍の時間がかかるため）
+    const empty: Record<string, number | null> = {}
     const [result1, result2] = await Promise.all([
       file1 ? extractFromImage(file1,
         `タニタ体組成計の「体脂肪」画面です。右側パネルの数値を読み取ってください。
 右側上部に「Weight NET」と体重(kg)、その下に体脂肪率(%)が表示されています。
 数値のみをJSON形式で返してください:
-{"body_weight": 体重の数値, "body_fat_percent": 体脂肪率の数値}`) : Promise.resolve({}),
+{"body_weight": 体重の数値, "body_fat_percent": 体脂肪率の数値}`) : Promise.resolve(empty),
       file2 ? extractFromImage(file2,
         `タニタ体組成計の「筋肉」画面です。右側パネルの数値を読み取ってください。
 右側上部に「Weight NET」と体重(kg)、その下に筋肉量合計(kg)が表示されています。
 数値のみをJSON形式で返してください:
-{"body_weight": 体重の数値, "muscle_mass": 筋肉量合計の数値}`) : Promise.resolve({})
+{"body_weight": 体重の数値, "muscle_mass": 筋肉量合計の数値}`) : Promise.resolve(empty)
     ])
 
     // 結果をマージ
