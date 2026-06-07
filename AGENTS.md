@@ -26,7 +26,7 @@ Fix ALL errors before committing. TypeScript errors caught here prevent Vercel b
 
 - Every route needs a top-level `try-catch` that returns JSON (never let it throw uncaught)
 - Add `export const maxDuration = 60` to any route that calls external APIs (Claude, etc.)
-- Claude Vision calls → use `claude-haiku-4-5` (fast, cheap, sufficient for OCR)
+- Claude Vision/OCR calls → use `claude-sonnet-4-5`（haiku-4-5 は複雑なレイアウト〈タニタ体組成計等〉で読み取り精度が低い）
 - Claude chat/reasoning → use `claude-sonnet-4-5`
 
 ## Vercel constraints (Hobby plan)
