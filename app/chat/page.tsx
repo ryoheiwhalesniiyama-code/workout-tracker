@@ -15,10 +15,13 @@ export default function ChatPage() {
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
+  // 今日の日付をセッションIDとして使用（同日は会話を継続、翌日はリセット）
+  const sessionId = new Date().toISOString().split('T')[0]
+
   useEffect(() => {
     const loadHistory = async () => {
       try {
-        const res = await fetch('/api/chat-history')
+        const res = await fetch(`/api/chat-history?date=${sessionId}`)
         const data = await res.json()
         if (data.messages) setMessages(data.messages)
       } finally {
@@ -56,7 +59,7 @@ export default function ChatPage() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMessage })
+        body: JSON.stringify({ message: userMessage, session_id: sessionId })
       })
       const data = await res.json()
       if (data.error) {

@@ -11,7 +11,7 @@ const anthropic = new Anthropic({
 
 export async function POST(req: NextRequest) {
   try {
-    const { message } = await req.json()
+    const { message, session_id } = await req.json()
 
     // 過去データを取得（直近に絞ってトークン節約）
     const [
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
       supabaseAdmin.from('workout_sets').select('*').order('set_number', { ascending: true }).limit(500),
       supabaseAdmin.from('body_metrics').select('*').order('date', { ascending: false }).limit(20),
       supabaseAdmin.from('fatigue_notes').select('*').order('date', { ascending: false }).limit(10),
-      supabaseAdmin.from('chat_messages').select('*').order('created_at', { ascending: true }).limit(20)
+      supabaseAdmin.from('chat_messages').select('role, content').eq('session_id', session_id ?? '').order('created_at', { ascending: true })
     ])
 
     // セットをワークアウトログに紐付け（日付昇順に戻す）
@@ -66,8 +66,8 @@ export async function POST(req: NextRequest) {
 
     // チャット履歴をDBに保存
     await supabaseAdmin.from('chat_messages').insert([
-      { role: 'user', content: message },
-      { role: 'assistant', content: assistantMessage }
+      { role: 'user', content: message, session_id },
+      { role: 'assistant', content: assistantMessage, session_id }
     ])
 
     return NextResponse.json({ message: assistantMessage })

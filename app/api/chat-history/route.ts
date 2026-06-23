@@ -1,17 +1,15 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const date = req.nextUrl.searchParams.get('date')
+  if (!date) return NextResponse.json({ messages: [] })
+
   const { data } = await supabaseAdmin
     .from('chat_messages')
-    .select('*')
+    .select('role, content')
+    .eq('session_id', date)
     .order('created_at', { ascending: true })
-    .limit(100)
 
-  return NextResponse.json({
-    messages: (data ?? []).map(m => ({
-      role: m.role,
-      content: m.content
-    }))
-  })
+  return NextResponse.json({ messages: data ?? [] })
 }
