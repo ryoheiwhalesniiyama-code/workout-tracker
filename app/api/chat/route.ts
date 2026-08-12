@@ -13,16 +13,26 @@ export async function POST(req: NextRequest) {
   try {
     const { message, session_id } = await req.json()
 
-    // 過去データを取得（直近に絞ってトークン節約）
+    // Step1: workout_logs を先に取得（セット取得のIDフィルタに使うため）
+    const { data: workoutLogs } = await supabaseAdmin
+      .from('workout_logs')
+      .select('*')
+      .order('date', { ascending: false })
+      .limit(30)
+
+    const logIds = (workoutLogs ?? []).map((l: Record<string, unknown>) => l.id as string)
+
+    // Step2: 残りのデータを並列取得
+    // workout_sets は logIds で絞り込む → limit不要、最近30ログの全セットが確実に取れる
     const [
-      { data: workoutLogs },
       { data: sets },
       { data: bodyMetrics },
       { data: fatigueNotes },
       { data: chatHistory }
     ] = await Promise.all([
-      supabaseAdmin.from('workout_logs').select('*').order('date', { ascending: false }).limit(30),
-      supabaseAdmin.from('workout_sets').select('*').order('set_number', { ascending: true }).limit(500),
+      logIds.length > 0
+        ? supabaseAdmin.from('workout_sets').select('*').in('workout_log_id', logIds).order('set_number', { ascending: true })
+        : supabaseAdmin.from('workout_sets').select('*').limit(0),
       supabaseAdmin.from('body_metrics').select('*').order('date', { ascending: false }).limit(20),
       supabaseAdmin.from('fatigue_notes').select('*').order('date', { ascending: false }).limit(10),
       supabaseAdmin.from('chat_messages').select('role, content').eq('session_id', session_id ?? '').order('created_at', { ascending: true })
@@ -32,9 +42,9 @@ export async function POST(req: NextRequest) {
     const logsWithSets = (workoutLogs ?? [])
       .map(log => ({
         ...log,
-        sets: (sets ?? []).filter(s => s.workout_log_id === log.id)
+        sets: (sets ?? []).filter((s: Record<string, unknown>) => s.workout_log_id === log.id)
       }))
-      .sort((a, b) => a.date.localeCompare(b.date))
+      .sort((a, b) => (a.date as string).localeCompare(b.date as string))
 
     // システムプロンプト構築
     const systemPrompt = buildSystemPrompt({
@@ -75,7 +85,6 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
     console.error('chat API error:', msg)
-    // エラー内容をそのままクライアントに返す（デバッグ用）
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
