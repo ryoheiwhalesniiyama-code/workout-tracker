@@ -5,6 +5,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 type Message = {
   role: 'user' | 'assistant'
   content: string
+  session_id?: string
 }
 
 export default function ChatPage() {
@@ -21,7 +22,7 @@ export default function ChatPage() {
   useEffect(() => {
     const loadHistory = async () => {
       try {
-        const res = await fetch(`/api/chat-history?date=${sessionId}`)
+        const res = await fetch('/api/chat-history')
         const data = await res.json()
         if (data.messages) setMessages(data.messages)
       } finally {
@@ -52,7 +53,7 @@ export default function ChatPage() {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
     }
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }])
+    setMessages(prev => [...prev, { role: 'user', content: userMessage, session_id: sessionId }])
     setLoading(true)
 
     try {
@@ -63,14 +64,13 @@ export default function ChatPage() {
       })
       const data = await res.json()
       if (data.error) {
-        // APIエラーの場合は内容を表示（デバッグ用）
-        setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ エラー: ${data.error}` }])
+        setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ エラー: ${data.error}`, session_id: sessionId }])
       } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: data.message }])
+        setMessages(prev => [...prev, { role: 'assistant', content: data.message, session_id: sessionId }])
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
-      setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ 通信エラー: ${msg}` }])
+      setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ 通信エラー: ${msg}`, session_id: sessionId }])
     } finally {
       setLoading(false)
     }
@@ -83,13 +83,51 @@ export default function ChatPage() {
     }, 300)
   }, [])
 
+  // 日付ヘッダーを挿入しながらメッセージをレンダリング
+  const renderMessages = () => {
+    const elements: React.ReactNode[] = []
+    let lastDate = ''
+
+    messages.forEach((msg, i) => {
+      const msgDate = msg.session_id ?? ''
+      if (msgDate && msgDate !== lastDate) {
+        const isToday = msgDate === sessionId
+        const label = isToday
+          ? '今日'
+          : new Date(msgDate + 'T00:00:00').toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' })
+        elements.push(
+          <div key={`date-${msgDate}`} className="flex items-center gap-2 my-2">
+            <div className="flex-1 h-px bg-gray-800" />
+            <span className="text-xs text-gray-500">{label}</span>
+            <div className="flex-1 h-px bg-gray-800" />
+          </div>
+        )
+        lastDate = msgDate
+      }
+
+      elements.push(
+        <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+          <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap ${
+            msg.role === 'user'
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-800 text-gray-100'
+          }`}>
+            {msg.content}
+          </div>
+        </div>
+      )
+    })
+
+    return elements
+  }
+
   return (
     <div className="flex flex-col bg-gray-950 text-white" style={{ height: '100dvh' }}>
       <div className="sticky top-0 z-10 flex items-center px-4 py-3 border-b border-gray-800 bg-gray-900 flex-shrink-0">
         <a href="/" className="text-gray-400 mr-3 text-xl">←</a>
         <div>
           <h1 className="font-bold text-lg">AIコーチ</h1>
-          <p className="text-xs text-gray-500">過去のログを全て把握しています</p>
+          <p className="text-xs text-gray-500">過去7日間の会話を表示中</p>
         </div>
       </div>
 
@@ -105,17 +143,7 @@ export default function ChatPage() {
             <p className="text-sm mt-2">過去のログを全て把握しています</p>
           </div>
         ) : (
-          messages.map((msg, i) => (
-            <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap ${
-                msg.role === 'user'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-800 text-gray-100'
-              }`}>
-                {msg.content}
-              </div>
-            </div>
-          ))
+          renderMessages()
         )}
         {loading && (
           <div className="flex justify-start">
