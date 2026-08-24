@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { parseSaveMenuMarker } from '@/lib/saveMenuParser'
 
 type Message = {
   role: 'user' | 'assistant'
@@ -8,15 +9,17 @@ type Message = {
   session_id?: string
 }
 
+type Toast = { message: string; type: 'success' | 'error' }
+
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
+  const [toast, setToast] = useState<Toast | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // 今日の日付をセッションIDとして使用（同日は会話を継続、翌日はリセット）
   const sessionId = new Date().toISOString().split('T')[0]
 
   useEffect(() => {
@@ -36,37 +39,56 @@ export default function ChatPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(e.target.value)
-    // 高さを内容に合わせて自動調整
-    const ta = e.target
-    ta.style.height = 'auto'
-    ta.style.height = `${ta.scrollHeight}px`
-  }
+  const showToast = useCallback((message: string, type: Toast['type']) => {
+    setToast({ message, type })
+    setTimeout(() => setToast(null), 3000)
+  }, [])
 
-  const sendMessage = async () => {
-    if (!input.trim() || loading) return
-
-    const userMessage = input.trim()
-    setInput('')
-    // 送信後に高さをリセット
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'
+  const saveNextMenu = useCallback(async (content: string, plannedDate: string) => {
+    try {
+      const res = await fetch('/api/next-menu', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content, planned_date: plannedDate })
+      })
+      if (res.ok) {
+        showToast('次回メニューを保存しました ✅', 'success')
+      } else {
+        showToast('保存に失敗しました', 'error')
+      }
+    } catch {
+      showToast('保存に失敗しました', 'error')
     }
-    setMessages(prev => [...prev, { role: 'user', content: userMessage, session_id: sessionId }])
+  }, [showToast])
+
+  const sendMessageWithContent = useCallback(async (text: string) => {
+    if (loading || !text.trim()) return
+
+    setMessages(prev => [...prev, { role: 'user', content: text, session_id: sessionId }])
     setLoading(true)
 
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMessage, session_id: sessionId })
+        body: JSON.stringify({ message: text, session_id: sessionId })
       })
       const data = await res.json()
+
       if (data.error) {
         setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ エラー: ${data.error}`, session_id: sessionId }])
+        return
+      }
+
+      const rawMessage: string = data.message ?? ''
+
+      // SAVE_MENUマーカーを検出
+      const saveResult = parseSaveMenuMarker(rawMessage)
+      if (saveResult) {
+        setMessages(prev => [...prev, { role: 'assistant', content: saveResult.cleanContent, session_id: sessionId }])
+        await saveNextMenu(saveResult.cleanContent, saveResult.plannedDate)
       } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: data.message, session_id: sessionId }])
+        setMessages(prev => [...prev, { role: 'assistant', content: rawMessage, session_id: sessionId }])
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
@@ -74,16 +96,32 @@ export default function ChatPage() {
     } finally {
       setLoading(false)
     }
+  }, [loading, sessionId, saveNextMenu])
+
+  const sendMessage = useCallback(async () => {
+    const text = input.trim()
+    if (!text) return
+    setInput('')
+    if (textareaRef.current) textareaRef.current.style.height = 'auto'
+    await sendMessageWithContent(text)
+  }, [input, sendMessageWithContent])
+
+  const handleExport = useCallback(() => {
+    if (loading) return
+    sendMessageWithContent('次回メニューを書き出したい')
+  }, [loading, sendMessageWithContent])
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value)
+    const ta = e.target
+    ta.style.height = 'auto'
+    ta.style.height = `${ta.scrollHeight}px`
   }
 
   const handleFocus = useCallback(() => {
-    // キーボードが出た後にスクロールして入力欄を見えるようにする
-    setTimeout(() => {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }, 300)
+    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 300)
   }, [])
 
-  // 日付ヘッダーを挿入しながらメッセージをレンダリング
   const renderMessages = () => {
     const elements: React.ReactNode[] = []
     let lastDate = ''
@@ -104,31 +142,47 @@ export default function ChatPage() {
         )
         lastDate = msgDate
       }
-
       elements.push(
         <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
           <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap ${
-            msg.role === 'user'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-800 text-gray-100'
+            msg.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-100'
           }`}>
             {msg.content}
           </div>
         </div>
       )
     })
-
     return elements
   }
 
   return (
     <div className="flex flex-col bg-gray-950 text-white" style={{ height: '100dvh' }}>
-      <div className="sticky top-0 z-10 flex items-center px-4 py-3 border-b border-gray-800 bg-gray-900 flex-shrink-0">
-        <a href="/" className="text-gray-400 mr-3 text-xl">←</a>
-        <div>
-          <h1 className="font-bold text-lg">AIコーチ</h1>
-          <p className="text-xs text-gray-500">過去7日間の会話を表示中</p>
+      {/* トースト */}
+      {toast && (
+        <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl text-sm font-medium shadow-lg transition-all ${
+          toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+        }`}>
+          {toast.message}
         </div>
+      )}
+
+      {/* ヘッダー */}
+      <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-gray-900 flex-shrink-0">
+        <div className="flex items-center">
+          <a href="/" className="text-gray-400 mr-3 text-xl">←</a>
+          <div>
+            <h1 className="font-bold text-lg">AIコーチ</h1>
+            <p className="text-xs text-gray-500">過去7日間の会話を表示中</p>
+          </div>
+        </div>
+        <button
+          onClick={handleExport}
+          disabled={loading}
+          title="次回メニューを書き出す"
+          className="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-40 rounded-xl px-3 py-2 text-xs font-medium transition-colors"
+        >
+          📋 書き出す
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
@@ -147,9 +201,7 @@ export default function ChatPage() {
         )}
         {loading && (
           <div className="flex justify-start">
-            <div className="bg-gray-800 rounded-2xl px-4 py-3 text-sm text-gray-400">
-              考え中...
-            </div>
+            <div className="bg-gray-800 rounded-2xl px-4 py-3 text-sm text-gray-400">考え中...</div>
           </div>
         )}
         <div ref={bottomRef} />

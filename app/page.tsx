@@ -40,11 +40,16 @@ export default async function HomePage() {
       <div className="px-4 py-5 max-w-lg mx-auto space-y-5">
 
         {/* アクションボタン（上部） */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <Link href="/log" className="bg-blue-600 hover:bg-blue-500 active:bg-blue-700 rounded-2xl p-4 text-center transition-colors">
             <p className="text-3xl mb-1">📷</p>
             <p className="font-bold text-sm">ログを記録</p>
-            <p className="text-xs text-blue-200 mt-0.5">スクショをアップロード</p>
+            <p className="text-xs text-blue-200 mt-0.5">スクショ</p>
+          </Link>
+          <Link href="/plan" className="bg-gray-800 hover:bg-gray-700 active:bg-gray-600 rounded-2xl p-4 text-center transition-colors">
+            <p className="text-3xl mb-1">📋</p>
+            <p className="font-bold text-sm">次回メニュー</p>
+            <p className="text-xs text-gray-400 mt-0.5">AIコーチ提案</p>
           </Link>
           <Link href="/chat" className="bg-gray-800 hover:bg-gray-700 active:bg-gray-600 rounded-2xl p-4 text-center transition-colors">
             <p className="text-3xl mb-1">🤖</p>
