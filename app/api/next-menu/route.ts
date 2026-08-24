@@ -17,17 +17,24 @@ export async function POST(req: NextRequest) {
     // Claude でエクササイズ情報を構造化抽出
     const extractResponse = await anthropic.messages.create({
       model: 'claude-sonnet-4-5',
-      max_tokens: 512,
+      max_tokens: 1024,
       messages: [{
         role: 'user',
-        content: `以下のトレーニングメニューテキストから種目情報を抽出してください。
-JSON配列のみ返してください。フィールド: name（種目名）, sets（セット数・数値）, reps（レップ数・数値）, weight（重量kg・数値）
-情報がない場合は null にしてください。
+        content: `以下のトレーニングメニューテキストから、すべてのセット情報を抽出してください。
+
+ルール:
+- マークダウン記法（**太字**, # 見出し, - リスト, 括弧内の説明など）を無視して内容を解析する
+- ウォームアップセットも含めてすべてのセットを1エントリとして抽出する
+- 例: 「- 60kg×5（ウォームアップ）」→ {"name":"デッドリフト","sets":1,"reps":5,"weight":60}
+- 例: 「3×5 @ 80kg」→ {"name":"ベンチプレス","sets":3,"reps":5,"weight":80}
+- JSON配列のみ返す（説明文・コードブロック不要）
+- フィールド: name（種目名・日本語）, sets（セット数・整数）, reps（レップ数・整数）, weight（重量kg・数値）
+- 情報が不明な場合は null
 
 テキスト:
 ${content}
 
-例: [{"name":"ベンチプレス","sets":5,"reps":5,"weight":82.5}]`
+JSON配列のみ返してください:`
       }]
     })
 

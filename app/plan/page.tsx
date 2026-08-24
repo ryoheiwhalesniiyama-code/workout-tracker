@@ -19,6 +19,18 @@ function formatDate(dateStr: string | null): string {
   })
 }
 
+/** マークダウン記号を除去してプレーンテキスト化する */
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/^#{1,6}\s+/gm, '')        // # 見出し
+    .replace(/\*\*(.+?)\*\*/g, '$1')    // **太字**
+    .replace(/\*(.+?)\*/g, '$1')        // *斜体*
+    .replace(/^[-*]\s+/gm, '・')        // - リスト → ・
+    .replace(/^---+$/gm, '')            // 水平線
+    .replace(/\n{3,}/g, '\n\n')         // 連続改行を整理
+    .trim()
+}
+
 export default function PlanPage() {
   const [menus, setMenus] = useState<PlannedMenu[]>([])
   const [loading, setLoading] = useState(true)
@@ -91,8 +103,10 @@ export default function PlanPage() {
                   ))}
                 </div>
               ) : (
-                // 構造化データなしの場合は生テキスト表示
-                <p className="text-sm text-gray-300 whitespace-pre-wrap leading-relaxed">{menu.content}</p>
+                // 構造化データなしの場合はマークダウン除去したテキストを表示
+                <p className="text-sm text-gray-300 whitespace-pre-wrap leading-relaxed">
+                  {stripMarkdown(menu.content)}
+                </p>
               )}
             </div>
           ))
