@@ -76,7 +76,7 @@ export async function GET() {
     const { data, error } = await supabaseAdmin
       .from('planned_menus')
       .select('*')
-      .order('created_at', { ascending: false })
+      .order('planned_date', { ascending: false, nullsFirst: false })
 
     if (error) {
       console.error('planned_menus fetch error:', error)
