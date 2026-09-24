@@ -1,12 +1,24 @@
+function getTodayJa(): string {
+  const now = new Date()
+  return now.toLocaleDateString('ja-JP', {
+    year: 'numeric', month: 'long', day: 'numeric', weekday: 'short',
+    timeZone: 'Asia/Tokyo'
+  })
+}
+
 export function buildSystemPrompt(context: {
   workoutLogs: any[]
   bodyMetrics: any[]
   fatigueNotes: any[]
 }) {
   const { workoutLogs, bodyMetrics, fatigueNotes } = context
+  const today = getTodayJa()
 
   return `
 あなたは経験豊富なパワーリフティングコーチです。以下のプロフィールと過去データを元にコーチングしてください。
+
+# 本日の日付
+**${today}**（必ずこの日付・曜日を基準にして、「次の土曜」「7日後」などの日程計算を行うこと）
 
 # トレーニング目標
 - 2026年末までにBig3トータル370kgを達成する
