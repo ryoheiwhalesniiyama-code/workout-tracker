@@ -13,6 +13,7 @@ export async function PATCH(
     const { id } = await params
     const body = await req.json()
     const exercises: Exercise[] = body.exercises
+    const notes: string | null = body.notes ?? null
 
     if (!Array.isArray(exercises)) {
       return NextResponse.json({ error: 'exercises must be an array' }, { status: 400 })
@@ -20,7 +21,7 @@ export async function PATCH(
 
     const { error } = await supabaseAdmin
       .from('planned_menus')
-      .update({ exercises })
+      .update({ exercises, notes })
       .eq('id', id)
 
     if (error) {

@@ -6,6 +6,31 @@ export const maxDuration = 60
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
+const MENU_MARKER = '📋 次回メニュー:'
+const NOTES_MARKER = '📝 備考:'
+
+/** content から種目テキストと備考を分離する */
+function parseContent(content: string): { menuText: string; notes: string | null } {
+  const menuIndex = content.indexOf(MENU_MARKER)
+  const notesIndex = content.indexOf(NOTES_MARKER)
+
+  // 📋 セクションがない場合はコンテンツ全体を種目テキストとして扱う（後方互換）
+  let menuText = content
+  if (menuIndex !== -1) {
+    const menuStart = menuIndex + MENU_MARKER.length
+    const menuEnd = notesIndex !== -1 ? notesIndex : content.length
+    menuText = content.substring(menuStart, menuEnd).trim()
+  }
+
+  // 📝 セクションがある場合は備考として抽出
+  const notes =
+    notesIndex !== -1
+      ? content.substring(notesIndex + NOTES_MARKER.length).trim() || null
+      : null
+
+  return { menuText, notes }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { content, planned_date } = await req.json()
@@ -13,6 +38,9 @@ export async function POST(req: NextRequest) {
     if (!content || !content.trim()) {
       return NextResponse.json({ error: 'content is required' }, { status: 400 })
     }
+
+    // 種目テキストと備考を分離
+    const { menuText, notes } = parseContent(content.trim())
 
     // Claude でエクササイズ情報を構造化抽出
     const extractResponse = await anthropic.messages.create({
@@ -22,17 +50,18 @@ export async function POST(req: NextRequest) {
         role: 'user',
         content: `以下のトレーニングメニューテキストから、すべてのセット情報を抽出してください。
 
+形式: 「・{種目名} {セット数}×{rep数} @ {重量}kg」（1行1セット）
+
 ルール:
-- マークダウン記法（**太字**, # 見出し, - リスト, 括弧内の説明など）を無視して内容を解析する
-- ウォームアップセットも含めてすべてのセットを1エントリとして抽出する
-- 例: 「- 60kg×5（ウォームアップ）」→ {"name":"デッドリフト","sets":1,"reps":5,"weight":60}
-- 例: 「3×5 @ 80kg」→ {"name":"ベンチプレス","sets":3,"reps":5,"weight":80}
+- 「・」や「-」で始まる各行が1セット
+- sets（セット数）が明示されていなければ 1 として扱う
+- 重量がない（「軽め」「自重」など）場合は weight: null
+- ヘッダ行・備考行・説明文は無視する
 - JSON配列のみ返す（説明文・コードブロック不要）
-- フィールド: name（種目名・日本語）, sets（セット数・整数）, reps（レップ数・整数）, weight（重量kg・数値）
-- 情報が不明な場合は null
+- フィールド: name（種目名・日本語）, sets（整数）, reps（整数）, weight（数値 or null）
 
 テキスト:
-${content}
+${menuText}
 
 JSON配列のみ返してください:`
       }]
@@ -53,7 +82,8 @@ JSON配列のみ返してください:`
       .insert({
         content: content.trim(),
         planned_date: planned_date ?? null,
-        exercises
+        exercises,
+        notes
       })
       .select('id')
       .single()

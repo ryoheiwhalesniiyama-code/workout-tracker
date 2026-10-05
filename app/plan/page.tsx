@@ -28,6 +28,7 @@ type PlannedMenu = {
   planned_date: string | null
   content: string
   exercises: Exercise[] | null
+  notes: string | null
 }
 
 function formatDate(dateStr: string | null): string {
@@ -159,6 +160,7 @@ export default function PlanPage() {
 
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editExercises, setEditExercises] = useState<EditExercise[]>([])
+  const [editNotes, setEditNotes] = useState<string>('')
   const [addForm, setAddForm] = useState<AddFormState>({ name: '', sets: '', reps: '', weight: '' })
   const [saving, setSaving] = useState(false)
 
@@ -183,12 +185,14 @@ export default function PlanPage() {
   function startEdit(menu: PlannedMenu) {
     setEditingId(menu.id)
     setEditExercises(toEditExercises(menu.exercises))
+    setEditNotes(menu.notes ?? '')
     setAddForm({ name: '', sets: '', reps: '', weight: '' })
   }
 
   function cancelEdit() {
     setEditingId(null)
     setEditExercises([])
+    setEditNotes('')
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -221,15 +225,17 @@ export default function PlanPage() {
       // _key を除いて保存
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const exercises: Exercise[] = editExercises.map(({ _key, ...ex }) => ex)
+      const notes = editNotes.trim() || null
       const res = await fetch(`/api/next-menu/${menuId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ exercises }),
+        body: JSON.stringify({ exercises, notes }),
       })
       if (res.ok) {
-        setMenus(prev => prev.map(m => m.id === menuId ? { ...m, exercises } : m))
+        setMenus(prev => prev.map(m => m.id === menuId ? { ...m, exercises, notes } : m))
         setEditingId(null)
         setEditExercises([])
+        setEditNotes('')
       }
     } finally {
       setSaving(false)
@@ -316,6 +322,18 @@ export default function PlanPage() {
                       onAdd={addExercise}
                     />
 
+                    {/* 備考（編集） */}
+                    <div className="space-y-1">
+                      <p className="text-xs text-gray-400">📝 備考（任意）</p>
+                      <textarea
+                        value={editNotes}
+                        onChange={e => setEditNotes(e.target.value)}
+                        placeholder="方針・注意点など（AIコーチとの会話内容を貼っても）"
+                        rows={3}
+                        className="w-full bg-gray-800 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                      />
+                    </div>
+
                     {/* 保存 / キャンセル */}
                     <div className="flex gap-2 pt-1">
                       <button
@@ -335,20 +353,29 @@ export default function PlanPage() {
                   </>
                 ) : (
                   // 通常表示
-                  menu.exercises && menu.exercises.length > 0 ? (
-                    <div className="space-y-2">
-                      {menu.exercises.map((ex, i) => (
-                        <div key={i} className="bg-gray-800 rounded-xl px-3 py-2 flex justify-between items-center">
-                          <span className="text-sm font-medium">{ex.name}</span>
-                          <span className="text-xs text-gray-400">{formatExercise(ex)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-300 whitespace-pre-wrap leading-relaxed">
-                      {stripMarkdown(menu.content)}
-                    </p>
-                  )
+                  <>
+                    {menu.exercises && menu.exercises.length > 0 ? (
+                      <div className="space-y-2">
+                        {menu.exercises.map((ex, i) => (
+                          <div key={i} className="bg-gray-800 rounded-xl px-3 py-2 flex justify-between items-center">
+                            <span className="text-sm font-medium">{ex.name}</span>
+                            <span className="text-xs text-gray-400">{formatExercise(ex)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-300 whitespace-pre-wrap leading-relaxed">
+                        {stripMarkdown(menu.content)}
+                      </p>
+                    )}
+                    {/* 備考（表示） */}
+                    {menu.notes && (
+                      <div className="border-t border-gray-800 pt-2 mt-1">
+                        <p className="text-xs text-gray-500 mb-1">📝 備考</p>
+                        <p className="text-xs text-gray-400 whitespace-pre-wrap leading-relaxed">{menu.notes}</p>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )
