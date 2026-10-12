@@ -144,8 +144,10 @@ export default function ChatPage() {
       }
       elements.push(
         <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-          <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap ${
-            msg.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-100'
+          <div className={`rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap ${
+            msg.role === 'user'
+              ? 'max-w-[85%] bg-blue-600 text-white'
+              : 'max-w-[85%] md:w-[90%] bg-gray-800 text-gray-100'
           }`}>
             {msg.content}
           </div>
