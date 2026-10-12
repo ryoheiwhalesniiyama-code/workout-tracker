@@ -65,7 +65,7 @@ function toEditExercises(exercises: Exercise[] | null): EditExercise[] {
 }
 
 // ドラッグ可能な種目行（編集モード用）
-function SortableRow({ exercise }: { exercise: EditExercise }) {
+function SortableRow({ exercise, onDelete }: { exercise: EditExercise; onDelete: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: exercise._key,
   })
@@ -90,6 +90,13 @@ function SortableRow({ exercise }: { exercise: EditExercise }) {
       </button>
       <span className="text-sm font-medium flex-1">{exercise.name}</span>
       <span className="text-xs text-gray-400">{formatExercise(exercise)}</span>
+      <button
+        onClick={onDelete}
+        className="text-gray-600 hover:text-red-400 text-base leading-none px-1 shrink-0"
+        aria-label="この種目を削除"
+      >
+        ×
+      </button>
     </div>
   )
 }
@@ -336,7 +343,13 @@ export default function PlanPage() {
                           {editExercises.length === 0 ? (
                             <p className="text-xs text-gray-600 text-center py-2">種目なし</p>
                           ) : (
-                            editExercises.map(ex => <SortableRow key={ex._key} exercise={ex} />)
+                            editExercises.map(ex => (
+                              <SortableRow
+                                key={ex._key}
+                                exercise={ex}
+                                onDelete={() => setEditExercises(prev => prev.filter(e => e._key !== ex._key))}
+                              />
+                            ))
                           )}
                         </div>
                       </SortableContext>
