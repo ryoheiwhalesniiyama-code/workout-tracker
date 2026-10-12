@@ -5,6 +5,31 @@ export const maxDuration = 60
 
 type Exercise = { name: string; sets: number | null; reps: number | null; weight: number | null }
 
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+
+    const { error } = await supabaseAdmin
+      .from('planned_menus')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      console.error('planned_menus delete error:', error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error('next-menu DELETE error:', msg)
+    return NextResponse.json({ error: msg }, { status: 500 })
+  }
+}
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

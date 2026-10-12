@@ -163,6 +163,7 @@ export default function PlanPage() {
   const [editNotes, setEditNotes] = useState<string>('')
   const [addForm, setAddForm] = useState<AddFormState>({ name: '', sets: '', reps: '', weight: '' })
   const [saving, setSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -217,6 +218,19 @@ export default function PlanPage() {
     }
     setEditExercises(prev => [...prev, newEx])
     setAddForm({ name: '', sets: '', reps: '', weight: '' })
+  }
+
+  async function deleteMenu(menuId: string) {
+    if (!window.confirm('このメニューを削除しますか？')) return
+    setDeletingId(menuId)
+    try {
+      const res = await fetch(`/api/next-menu/${menuId}`, { method: 'DELETE' })
+      if (res.ok) {
+        setMenus(prev => prev.filter(m => m.id !== menuId))
+      }
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   async function saveEdit(menuId: string) {
@@ -288,9 +302,22 @@ export default function PlanPage() {
                       </button>
                     )}
                   </div>
-                  <span className="text-xs text-gray-600 shrink-0 ml-2">
-                    保存: {new Date(menu.created_at).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })}
-                  </span>
+                  <div className="flex items-center gap-2 shrink-0 ml-2">
+                    <span className="text-xs text-gray-600">
+                      保存: {new Date(menu.created_at).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })}
+                    </span>
+                    {!isEditing && (
+                      <button
+                        onClick={() => deleteMenu(menu.id)}
+                        disabled={deletingId === menu.id}
+                        className="text-gray-600 hover:text-red-400 disabled:opacity-40 text-xs px-1"
+                        aria-label="削除"
+                        title="メニューを削除"
+                      >
+                        🗑
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {isEditing ? (

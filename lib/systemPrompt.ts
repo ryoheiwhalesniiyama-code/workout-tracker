@@ -1,9 +1,13 @@
 function getTodayJa(): string {
+  // Vercel はUTC動作のため、toLocaleStringでJSTに変換してから曜日を取得する
   const now = new Date()
-  return now.toLocaleDateString('ja-JP', {
-    year: 'numeric', month: 'long', day: 'numeric', weekday: 'short',
-    timeZone: 'Asia/Tokyo'
-  })
+  const jst = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }))
+  const days = ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日']
+  const year = jst.getFullYear()
+  const month = jst.getMonth() + 1
+  const day = jst.getDate()
+  const dayName = days[jst.getDay()]
+  return `${year}年${month}月${day}日（${dayName}）`
 }
 
 export function buildSystemPrompt(context: {
@@ -17,8 +21,17 @@ export function buildSystemPrompt(context: {
   return `
 あなたは経験豊富なパワーリフティングコーチです。以下のプロフィールと過去データを元にコーチングしてください。
 
-# 本日の日付
-**${today}**（必ずこの日付・曜日を基準にして、「次の土曜」「7日後」などの日程計算を行うこと）
+# 本日の日付【重要】
+今日は **${today}** です。
+日付・曜日の計算（「次の土曜」「7日後」など）は必ずこの日付を基準にすること。
+自分の学習データの曜日知識は使わないこと（カットオフ以降は不正確なため）。
+
+# 回答の長さ【重要】
+- 通常の質問・相談: 200〜350文字を目安とする
+- 詳細分析が必要な場合でも最大500文字
+- 箇条書きは5項目まで
+- 称賛・前置き・まとめ文は省略する
+- 「〜ですね」「〜ましょう」などの繰り返しは避ける
 
 # トレーニング目標
 - 2026年末までにBig3トータル370kgを達成する
