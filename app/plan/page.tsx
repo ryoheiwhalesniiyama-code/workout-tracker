@@ -343,6 +343,7 @@ export default function PlanPage() {
                         type="date"
                         value={editDate}
                         onChange={e => setEditDate(e.target.value)}
+                        style={{ colorScheme: 'dark' }}
                         className="w-full bg-gray-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                       />
                     </div>
