@@ -39,6 +39,7 @@ export async function PATCH(
     const body = await req.json()
     const exercises: Exercise[] = body.exercises
     const notes: string | null = body.notes ?? null
+    const planned_date: string | null = body.planned_date ?? null
 
     if (!Array.isArray(exercises)) {
       return NextResponse.json({ error: 'exercises must be an array' }, { status: 400 })
@@ -46,7 +47,7 @@ export async function PATCH(
 
     const { error } = await supabaseAdmin
       .from('planned_menus')
-      .update({ exercises, notes })
+      .update({ exercises, notes, planned_date })
       .eq('id', id)
 
     if (error) {

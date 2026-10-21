@@ -168,6 +168,7 @@ export default function PlanPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editExercises, setEditExercises] = useState<EditExercise[]>([])
   const [editNotes, setEditNotes] = useState<string>('')
+  const [editDate, setEditDate] = useState<string>('')
   const [addForm, setAddForm] = useState<AddFormState>({ name: '', sets: '', reps: '', weight: '' })
   const [saving, setSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -194,6 +195,7 @@ export default function PlanPage() {
     setEditingId(menu.id)
     setEditExercises(toEditExercises(menu.exercises))
     setEditNotes(menu.notes ?? '')
+    setEditDate(menu.planned_date ?? '')
     setAddForm({ name: '', sets: '', reps: '', weight: '' })
   }
 
@@ -201,6 +203,7 @@ export default function PlanPage() {
     setEditingId(null)
     setEditExercises([])
     setEditNotes('')
+    setEditDate('')
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -247,16 +250,20 @@ export default function PlanPage() {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const exercises: Exercise[] = editExercises.map(({ _key, ...ex }) => ex)
       const notes = editNotes.trim() || null
+      const planned_date = editDate || null
       const res = await fetch(`/api/next-menu/${menuId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ exercises, notes }),
+        body: JSON.stringify({ exercises, notes, planned_date }),
       })
       if (res.ok) {
-        setMenus(prev => prev.map(m => m.id === menuId ? { ...m, exercises, notes } : m))
+        setMenus(prev => prev.map(m =>
+          m.id === menuId ? { ...m, exercises, notes, planned_date } : m
+        ))
         setEditingId(null)
         setEditExercises([])
         setEditNotes('')
+        setEditDate('')
       }
     } finally {
       setSaving(false)
@@ -329,6 +336,17 @@ export default function PlanPage() {
 
                 {isEditing ? (
                   <>
+                    {/* 日付（編集） */}
+                    <div className="space-y-1">
+                      <p className="text-xs text-gray-400">📅 実施予定日</p>
+                      <input
+                        type="date"
+                        value={editDate}
+                        onChange={e => setEditDate(e.target.value)}
+                        className="w-full bg-gray-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                    </div>
+
                     {/* ドラッグ&ドロップリスト */}
                     <DndContext
                       sensors={sensors}
