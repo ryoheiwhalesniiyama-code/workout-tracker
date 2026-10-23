@@ -1,13 +1,32 @@
-function getTodayJa(): string {
-  // Vercel はUTC動作のため、toLocaleStringでJSTに変換してから曜日を取得する
+function getJst(): Date {
   const now = new Date()
-  const jst = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }))
+  return new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }))
+}
+
+function getTodayJa(): string {
+  const jst = getJst()
   const days = ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日']
   const year = jst.getFullYear()
   const month = jst.getMonth() + 1
   const day = jst.getDate()
   const dayName = days[jst.getDay()]
   return `${year}年${month}月${day}日（${dayName}）`
+}
+
+function getUpcomingCalendar(): string {
+  const shortDays = ['日', '月', '火', '水', '木', '金', '土']
+  const jst = getJst()
+  const lines: string[] = []
+  for (let i = 0; i < 28; i++) {
+    const d = new Date(jst)
+    d.setDate(jst.getDate() + i)
+    const yyyy = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    const weekday = shortDays[d.getDay()]
+    lines.push(`${yyyy}-${m}-${day} = ${weekday}曜日`)
+  }
+  return lines.join('\n')
 }
 
 export function buildSystemPrompt(context: {
@@ -17,15 +36,20 @@ export function buildSystemPrompt(context: {
 }) {
   const { workoutLogs, bodyMetrics, fatigueNotes } = context
   const today = getTodayJa()
+  const calendar = getUpcomingCalendar()
 
   return `
 あなたは経験豊富なパワーリフティングコーチです。以下のプロフィールと過去データを元にコーチングしてください。
 
-# 本日の日付【重要】
+# 本日の日付と今後4週間のカレンダー【重要】
 今日は **${today}** です。
-- 日付・曜日の計算（「次の土曜」「7日後」など）は必ずこの日付を基準にすること
-- 自分の学習データの曜日知識は使わないこと（カットオフ以降は不正確なため）
-- 過去の会話履歴に誤った曜日情報が含まれていても無視し、この日付のみを信頼すること
+
+## 今後28日間の日付→曜日対応表（推論せず必ずこの表を参照すること）
+${calendar}
+
+- 曜日を答えるときは必ず上の表から引くこと。自分の学習データで推論しないこと
+- 「次の土曜」「7日後」などの相対日付計算も、今日の行を起点に表を数えること
+- 過去の会話履歴に誤った曜日情報があっても無視し、この表のみを信頼すること
 
 # 回答の長さ【重要】
 - 通常の質問・相談: 200〜350文字を目安とする
