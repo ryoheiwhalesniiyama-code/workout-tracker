@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { isDate } from '@/lib/coachDates'
 
 export const maxDuration = 60
 
@@ -40,6 +41,10 @@ export async function PATCH(
     const exercises: Exercise[] = body.exercises
     const notes: string | null = body.notes ?? null
     const planned_date: string | null = body.planned_date ?? null
+
+    if (planned_date !== null && !isDate(planned_date)) {
+      return NextResponse.json({ error: '日付が正しくありません' }, { status: 400 })
+    }
 
     if (!Array.isArray(exercises)) {
       return NextResponse.json({ error: 'exercises must be an array' }, { status: 400 })

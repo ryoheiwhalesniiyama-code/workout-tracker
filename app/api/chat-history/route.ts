@@ -1,31 +1,23 @@
 import { NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase'
+import { loadCoachContext, loadCoachHistory } from '@/lib/coachContext'
+import { decodeAssistant } from '@/lib/coachMemory'
+import { jstDate } from '@/lib/coachDates'
 
 export async function GET() {
   try {
-    const today = new Date()
-    const sevenDaysAgo = new Date(today)
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6)
-
-    const fromDate = sevenDaysAgo.toISOString().split('T')[0]
-    const toDate = today.toISOString().split('T')[0]
-
-    const { data, error } = await supabaseAdmin
-      .from('chat_messages')
-      .select('role, content, session_id')
-      .gte('session_id', fromDate)
-      .lte('session_id', toDate)
-      .order('created_at', { ascending: true })
-
-    if (error) {
-      console.error('chat-history fetch error:', error)
-      return NextResponse.json({ messages: [] })
-    }
-
-    return NextResponse.json({ messages: data ?? [] })
+    const [history, context] = await Promise.all([loadCoachHistory(), loadCoachContext()])
+    return NextResponse.json({
+      messages: history.map(row => ({
+        ...row,
+        ...(row.role === 'assistant' ? (() => { const decoded = decodeAssistant(row.content); return { content: decoded.message, draft: decoded.draft } })() : {}),
+        session_id: row.created_at ? jstDate(new Date(row.created_at)) : row.session_id,
+      })),
+      reviews: context.reviews.slice(0, 3),
+      savedPlanIds: context.plannedMenus.map(p => p.id),
+      contextStart: history[0]?.created_at ? jstDate(new Date(history[0].created_at)) : history[0]?.session_id ?? null,
+    }, { headers: { 'Cache-Control': 'no-store' } })
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e)
-    console.error('chat-history route error:', msg)
-    return NextResponse.json({ messages: [] })
+    console.error('chat-history fetch failed')
+    return NextResponse.json({ error: e instanceof Error ? e.message : '履歴を取得できませんでした' }, { status: 500 })
   }
 }

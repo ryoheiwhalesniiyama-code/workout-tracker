@@ -1,236 +1,156 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { parseSaveMenuMarker } from '@/lib/saveMenuParser'
+import Link from 'next/link'
+import { jstDate, formatCoachDate } from '@/lib/coachDates'
+import type { PlanDraft, ReviewCard } from '@/lib/coachMemory'
+import CoachPlanCard from '@/app/components/CoachPlanCard'
 
-type Message = {
-  role: 'user' | 'assistant'
-  content: string
-  session_id?: string
+type Message = { id?: string; role: 'user' | 'assistant'; content: string; session_id?: string; draft?: PlanDraft }
+
+function InlineText({ text }: { text: string }) {
+  return <>{text.split(/(\*\*[^*]+\*\*)/g).map((part, i) => part.startsWith('**')
+    ? <strong key={i} className="font-semibold text-white">{part.slice(2, -2)}</strong> : part)}</>
 }
-
-type Toast = { message: string; type: 'success' | 'error' }
+function Answer({ text }: { text: string }) {
+  return <div className="space-y-3 break-words [overflow-wrap:anywhere]">
+    {text.split(/\n\s*\n/).map((paragraph, i) => <p key={i} className={`whitespace-pre-wrap leading-7 ${i === 0 ? 'text-gray-100' : 'text-gray-200'}`}>
+      <InlineText text={paragraph.replace(/^#{1,4}\s/gm, '')} />
+    </p>)}
+  </div>
+}
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([])
+  const [reviews, setReviews] = useState<ReviewCard[]>([])
+  const [savedIds, setSavedIds] = useState<string[]>([])
+  const [contextStart, setContextStart] = useState<string | null>(null)
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
-  const [toast, setToast] = useState<Toast | null>(null)
+  const [historyError, setHistoryError] = useState('')
+  const [sendError, setSendError] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
+  const nearBottom = useRef(true)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  const sessionId = new Date().toISOString().split('T')[0]
-
+  const loadHistory = useCallback((signal?: AbortSignal) =>
+    fetch('/api/chat-history', { cache: 'no-store', signal }).then(async res => {
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? '会話履歴を取得できませんでした')
+      return data
+    }).then(data => {
+      if (signal?.aborted) return
+      setMessages(data.messages)
+      setReviews(data.reviews ?? [])
+      setSavedIds(data.savedPlanIds ?? [])
+      setContextStart(data.contextStart)
+    }).catch(e => {
+      if (!signal?.aborted) setHistoryError(e instanceof Error ? e.message : '履歴を取得できませんでした')
+    }).finally(() => { if (!signal?.aborted) setInitialLoading(false) }), [])
   useEffect(() => {
-    const loadHistory = async () => {
-      try {
-        const res = await fetch('/api/chat-history')
-        const data = await res.json()
-        if (data.messages) setMessages(data.messages)
-      } finally {
-        setInitialLoading(false)
-      }
-    }
-    loadHistory()
-  }, [])
-
+    const controller = new AbortController()
+    void loadHistory(controller.signal)
+    return () => controller.abort()
+  }, [loadHistory])
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
-
-  const showToast = useCallback((message: string, type: Toast['type']) => {
-    setToast({ message, type })
-    setTimeout(() => setToast(null), 3000)
-  }, [])
-
-  const saveNextMenu = useCallback(async (content: string, plannedDate: string) => {
-    try {
-      const res = await fetch('/api/next-menu', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content, planned_date: plannedDate })
-      })
-      if (res.ok) {
-        showToast('次回メニューを保存しました ✅', 'success')
-      } else {
-        showToast('保存に失敗しました', 'error')
-      }
-    } catch {
-      showToast('保存に失敗しました', 'error')
-    }
-  }, [showToast])
+    if (nearBottom.current) bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, loading])
 
   const sendMessageWithContent = useCallback(async (text: string) => {
-    if (loading || !text.trim()) return
-
-    setMessages(prev => [...prev, { role: 'user', content: text, session_id: sessionId }])
+    if (loading || initialLoading || historyError || !text.trim()) return
+    const sessionId = jstDate()
+    const localId = crypto.randomUUID()
+    nearBottom.current = true
+    setSendError('')
+    setMessages(prev => [...prev, { id: localId, role: 'user', content: text, session_id: sessionId }])
     setLoading(true)
-
+    setInput('')
     try {
       const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, session_id: sessionId })
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: text }),
       })
       const data = await res.json()
-
-      if (data.error) {
-        setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ エラー: ${data.error}`, session_id: sessionId }])
-        return
-      }
-
-      const rawMessage: string = data.message ?? ''
-
-      // SAVE_MENUマーカーを検出
-      const saveResult = parseSaveMenuMarker(rawMessage)
-      if (saveResult) {
-        setMessages(prev => [...prev, { role: 'assistant', content: saveResult.cleanContent, session_id: sessionId }])
-        await saveNextMenu(saveResult.cleanContent, saveResult.plannedDate)
-      } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: rawMessage, session_id: sessionId }])
-      }
+      if (!res.ok || data.error) throw new Error(data.error ?? '返答を取得できませんでした')
+      setMessages(prev => [...prev, { role: 'assistant', content: data.message, draft: data.draft, session_id: data.session_id }])
+      setReviews(data.reviews ?? [])
+      setContextStart(data.contextStart ?? null)
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e)
-      setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ 通信エラー: ${msg}`, session_id: sessionId }])
-    } finally {
-      setLoading(false)
-    }
-  }, [loading, sessionId, saveNextMenu])
-
-  const sendMessage = useCallback(async () => {
-    const text = input.trim()
-    if (!text) return
-    setInput('')
-    if (textareaRef.current) textareaRef.current.style.height = 'auto'
-    await sendMessageWithContent(text)
-  }, [input, sendMessageWithContent])
-
-  const handleExport = useCallback(() => {
-    if (loading) return
-    sendMessageWithContent('次回メニューを書き出したい')
-  }, [loading, sendMessageWithContent])
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(e.target.value)
-    const ta = e.target
-    ta.style.height = 'auto'
-    ta.style.height = `${ta.scrollHeight}px`
-  }
-
-  const handleFocus = useCallback(() => {
-    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 300)
-  }, [])
+      setMessages(prev => prev.filter(m => m.id !== localId))
+      setInput(text)
+      setSendError(e instanceof Error ? e.message : '通信に失敗しました。再送してください。')
+    } finally { setLoading(false) }
+  }, [loading, initialLoading, historyError])
 
   const renderMessages = () => {
-    const elements: React.ReactNode[] = []
     let lastDate = ''
-
-    messages.forEach((msg, i) => {
-      const msgDate = msg.session_id ?? ''
-      if (msgDate && msgDate !== lastDate) {
-        const isToday = msgDate === sessionId
-        const label = isToday
-          ? '今日'
-          : new Date(msgDate + 'T00:00:00').toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' })
-        elements.push(
-          <div key={`date-${msgDate}`} className="flex items-center gap-2 my-2">
-            <div className="flex-1 h-px bg-gray-800" />
-            <span className="text-xs text-gray-500">{label}</span>
-            <div className="flex-1 h-px bg-gray-800" />
-          </div>
-        )
-        lastDate = msgDate
-      }
-      elements.push(
-        <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-          <div className={`rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap ${
-            msg.role === 'user'
-              ? 'max-w-[85%] bg-blue-600 text-white'
-              : 'max-w-[85%] md:w-[90%] bg-gray-800 text-gray-100'
-          }`}>
-            {msg.content}
+    return messages.map((msg, i) => {
+      const date = msg.session_id
+      const separator = date && date !== lastDate
+      if (date) lastDate = date
+      return <div key={msg.id ?? i}>
+        {separator && <div className="my-5 flex items-center gap-2 text-xs text-gray-500">
+          <div className="h-px flex-1 bg-gray-800" /><span>{date === jstDate() ? '今日' : formatCoachDate(date)}</span><div className="h-px flex-1 bg-gray-800" />
+        </div>}
+        <div className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+          <div className={`min-w-0 rounded-2xl px-4 py-3 text-[15px] ${msg.role === 'user'
+            ? 'max-w-[85%] whitespace-pre-wrap break-words bg-blue-600 leading-7 text-white'
+            : 'w-full bg-gray-900 text-gray-100 md:w-[90%] md:px-5 md:py-4'}`}>
+            {msg.role === 'assistant' ? <Answer text={msg.content} /> : msg.content}
+            {msg.draft && <CoachPlanCard draft={msg.draft} saved={!!msg.draft.draftId && savedIds.includes(msg.draft.draftId)}
+              onSaved={id => { setSavedIds(prev => [...prev, id]); void fetch('/api/chat-history', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(data => { if (data) setReviews(data.reviews ?? []) }).catch(() => {}) }} />}
           </div>
         </div>
-      )
+      </div>
     })
-    return elements
   }
 
-  return (
-    <div className="flex flex-col bg-gray-950 text-white" style={{ height: '100dvh' }}>
-      {/* トースト */}
-      {toast && (
-        <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl text-sm font-medium shadow-lg transition-all ${
-          toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
-        }`}>
-          {toast.message}
+  return <div className="flex h-dvh min-h-0 flex-col bg-gray-950 text-white">
+    <header className="flex shrink-0 items-center justify-between gap-2 border-b border-gray-800 bg-gray-900 px-4 py-3">
+      <div className="flex min-w-0 items-center gap-3"><Link href="/" aria-label="ホームへ戻る" className="text-xl text-gray-400">←</Link>
+        <div><h1 className="text-lg font-bold">AIコーチ</h1>
+          <p className="text-xs text-gray-400">{contextStart ? `${contextStart}〜の会話を参照` : '会話と計画を引き継いで相談'}</p>
         </div>
-      )}
-
-      {/* ヘッダー */}
-      <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-gray-900 flex-shrink-0">
-        <div className="flex items-center">
-          <a href="/" className="text-gray-400 mr-3 text-xl">←</a>
-          <div>
-            <h1 className="font-bold text-lg">AIコーチ</h1>
-            <p className="text-xs text-gray-500">過去7日間の会話を表示中</p>
-          </div>
-        </div>
-        <button
-          onClick={handleExport}
-          disabled={loading}
-          title="次回メニューを書き出す"
-          className="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-40 rounded-xl px-3 py-2 text-xs font-medium transition-colors"
-        >
-          📋 書き出す
-        </button>
       </div>
+      <button onClick={() => void sendMessageWithContent('次回メニューを書き出したい。前回の仮説、試す変更、次に確認する結果も含めて。')}
+        disabled={loading || initialLoading || !!historyError}
+        className="shrink-0 rounded-xl bg-gray-800 px-3 py-2 text-xs disabled:opacity-40">📋 書き出す</button>
+    </header>
 
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {initialLoading ? (
-          <div className="text-center text-gray-500 mt-20">
-            <p className="text-sm">履歴を読み込み中...</p>
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="text-center text-gray-500 mt-20">
-            <p className="text-4xl mb-4">🏋️</p>
-            <p>トレーニングについて何でも聞いてください</p>
-            <p className="text-sm mt-2">過去のログを全て把握しています</p>
-          </div>
-        ) : (
-          renderMessages()
-        )}
-        {loading && (
-          <div className="flex justify-start">
-            <div className="bg-gray-800 rounded-2xl px-4 py-3 text-sm text-gray-400">考え中...</div>
-          </div>
-        )}
+    <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 md:px-6"
+      onScroll={e => { const el = e.currentTarget; nearBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120 }}>
+      <div className="mx-auto max-w-4xl space-y-5">
+        {reviews.length > 0 && <details className="rounded-xl border border-gray-800 bg-gray-900 p-3">
+          <summary className="cursor-pointer text-sm text-blue-200">引き継いでいる計画・次の確認（{reviews.length}件）</summary>
+          <div className="mt-3 space-y-3">{reviews.map(review => <div key={review.id} className="border-t border-gray-800 pt-3 text-sm">
+            <Link href="/plan" className="text-blue-200 underline">{review.date ? formatCoachDate(review.date) : '予定日未確認'}</Link>
+            <p className="my-1 text-xs text-amber-200">{review.status}</p>
+            <p className="whitespace-pre-wrap break-words leading-6 text-gray-300">{review.notes}</p>
+            {review.logIds.map(id => <Link key={id} href={`/workout/${id}`} className="mr-3 mt-1 inline-block text-xs text-blue-300 underline">照合候補のログ</Link>)}
+          </div>)}</div>
+        </details>}
+        {initialLoading ? <p className="py-12 text-center text-gray-400">履歴と計画を読み込み中…</p>
+          : historyError ? <div role="alert" className="rounded-xl bg-red-950 p-4 text-sm"><p>{historyError}</p>
+            <button onClick={() => { setInitialLoading(true); setHistoryError(''); void loadHistory() }} className="mt-3 underline">再読み込み</button></div>
+          : messages.length === 0 ? <div className="py-12 text-center text-gray-400"><p className="mb-4 text-4xl">🏋️</p>
+            <p>トレーニングについて相談してください</p><p className="mt-2 text-sm">保存した計画と実績を比べ、次の一歩を考えます</p></div> : renderMessages()}
+        {loading && <p role="status" className="text-sm text-gray-400">前回の計画と記録を確認中…</p>}
         <div ref={bottomRef} />
       </div>
+    </main>
 
-      <div className="px-4 py-3 border-t border-gray-800 bg-gray-900 flex-shrink-0">
-        <div className="flex gap-2 items-end">
-          <textarea
-            ref={textareaRef}
-            className="flex-1 bg-gray-800 rounded-2xl px-4 py-3 text-sm resize-none outline-none focus:ring-1 focus:ring-blue-500 max-h-40 overflow-y-auto"
-            placeholder="メッセージを入力..."
-            value={input}
-            onChange={handleInputChange}
-            onFocus={handleFocus}
-            rows={1}
-            style={{ height: 'auto' }}
-          />
-          <button
-            onClick={sendMessage}
-            disabled={loading || !input.trim()}
-            className="bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-full w-10 h-10 flex items-center justify-center flex-shrink-0 transition-colors"
-          >
-            ↑
-          </button>
-        </div>
-        <p className="text-xs text-gray-600 mt-1 text-center">右の↑ボタンで送信</p>
+    <form className="shrink-0 border-t border-gray-800 bg-gray-900 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+      onSubmit={e => { e.preventDefault(); void sendMessageWithContent(input.trim()) }}>
+      {sendError && <p role="alert" className="mx-auto mb-2 max-w-4xl text-sm text-red-300">{sendError}</p>}
+      <div className="mx-auto flex max-w-4xl items-end gap-2">
+        <textarea ref={textareaRef} aria-label="メッセージ" value={input} rows={2} maxLength={10000}
+          onChange={e => { setInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = `${Math.min(e.target.scrollHeight, 160)}px` }}
+          className="max-h-40 min-h-12 flex-1 resize-none rounded-xl bg-gray-800 px-4 py-3 text-base leading-6 outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="今回の結果や、相談したいこと…" />
+        <button type="submit" aria-label="送信" disabled={loading || initialLoading || !!historyError || !input.trim()}
+          className="h-11 w-11 shrink-0 rounded-full bg-blue-600 text-xl disabled:bg-gray-700">↑</button>
       </div>
-    </div>
-  )
+      <p className="mt-1 text-center text-xs text-gray-500">右の↑で送信 · 詳しい回答はスクロールして読めます</p>
+    </form>
+  </div>
 }

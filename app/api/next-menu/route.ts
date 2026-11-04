@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { supabaseAdmin } from '@/lib/supabase'
+import { isDate } from '@/lib/coachDates'
+import { validPlanDraft, planContent, planNotes } from '@/lib/coachMemory'
 
 export const maxDuration = 60
 
@@ -33,9 +35,34 @@ function parseContent(content: string): { menuText: string; notes: string | null
 
 export async function POST(req: NextRequest) {
   try {
-    const { content, planned_date } = await req.json()
+    const { content, planned_date, draft } = await req.json()
 
-    if (!content || !content.trim()) {
+    // 新しい確認カードからの保存。表示日・保存日・PDCAの備考を同じ検証済みデータから作る。
+    if (draft !== undefined) {
+      if (!validPlanDraft(draft) || !draft.draftId) {
+        return NextResponse.json({ error: 'メニューと日付を確認してください' }, { status: 400 })
+      }
+      const canonicalContent = planContent(draft)
+      const { data, error } = await supabaseAdmin.from('planned_menus').insert({
+        id: draft.draftId, content: canonicalContent, planned_date: draft.plannedDate,
+        exercises: draft.exercises, notes: planNotes(draft),
+      }).select('id').single()
+      if (error?.code === '23505') {
+        const existing = await supabaseAdmin.from('planned_menus').select('id, content').eq('id', draft.draftId).single()
+        if (existing.error || existing.data?.content !== canonicalContent) {
+          return NextResponse.json({ error: 'この計画はすでに保存・変更されています。次回メニュー画面で確認してください。' }, { status: 409 })
+        }
+        return NextResponse.json({ success: true, id: existing.data.id })
+      }
+      if (error || !data) return NextResponse.json({ error: '計画を保存できませんでした。再試行してください。' }, { status: 500 })
+      return NextResponse.json({ success: true, id: data.id })
+    }
+
+    if (planned_date != null && !isDate(planned_date)) {
+      return NextResponse.json({ error: '日付が正しくありません' }, { status: 400 })
+    }
+
+    if (typeof content !== 'string' || !content.trim()) {
       return NextResponse.json({ error: 'content is required' }, { status: 400 })
     }
 

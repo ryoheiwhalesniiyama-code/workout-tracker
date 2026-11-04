@@ -48,6 +48,32 @@ describe('POST /api/next-menu', () => {
     mockSingle.mockResolvedValue({ data: { id: 'test-uuid-123' }, error: null })
   })
 
+  it('確認済みカードの種目とPDCAを日付表示と一致させ、追加のAI抽出なしで保存する', async () => {
+    const res = await POST(makePostRequest({ draft: {
+      draftId: '12345678-1234-4123-8123-123456789abc',
+      plannedDate: '2026-11-07', trainingDay: 'chest',
+      exercises: [{ name: 'ベンチプレス', sets: 3, reps: 5, weight: 82.5 }],
+      hypothesis: '疲労の影響', change: 'セットを減らす', check: '肩の張り', notes: '',
+    } }))
+    expect(res.status).toBe(200)
+    expect(mockAnthropicCreate).not.toHaveBeenCalled()
+    const saved = (mockInsert.mock.calls as unknown as Array<[Record<string, unknown>]>)[0][0]
+    expect(saved.planned_date).toBe('2026-11-07')
+    expect(saved.content).toContain('2026年11月7日（土）')
+    expect(saved.notes).toContain('次に確認する結果: 肩の張り')
+  })
+
+  it('不正な日付と範囲レップのカードをDBへ保存しない', async () => {
+    const res = await POST(makePostRequest({ draft: {
+      draftId: '12345678-1234-4123-8123-123456789abc',
+      plannedDate: '2026-02-30', trainingDay: 'chest',
+      exercises: [{ name: 'ベンチプレス', sets: 3, reps: '8-10', weight: 60 }],
+      hypothesis: '', change: '', check: '', notes: '',
+    } }))
+    expect(res.status).toBe(400)
+    expect(mockInsert).not.toHaveBeenCalled()
+  })
+
   // TC 4-1: 正常系 - 保存成功
   it('有効なcontent + planned_dateで保存成功しidを返す', async () => {
     const req = makePostRequest({
