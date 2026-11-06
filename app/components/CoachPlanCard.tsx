@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { formatCoachDate, scheduleWarning, TRAINING_DAYS } from '@/lib/coachDates'
 import type { PlanDraft } from '@/lib/coachMemory'
+import { groupExerciseRows } from '@/lib/exerciseRows'
 
 export default function CoachPlanCard({ draft, saved, onSaved }: {
   draft: PlanDraft; saved: boolean; onSaved: (id: string) => void
@@ -41,7 +42,7 @@ export default function CoachPlanCard({ draft, saved, onSaved }: {
     <div className="mt-3 overflow-x-auto">
       <table className="w-full text-left text-sm">
         <thead><tr className="text-gray-400"><th className="pb-2">種目</th><th>セット×回数</th><th>重量</th></tr></thead>
-        <tbody>{plan.exercises.map((e, i) => <tr key={i} className="border-t border-gray-800">
+        <tbody>{groupExerciseRows(plan.exercises).map((e, i) => <tr key={i} className="border-t border-gray-800">
           <td className="py-2 pr-2">{e.name}</td><td className="whitespace-nowrap pr-2">{e.sets}×{e.reps}</td><td className="whitespace-nowrap">{e.weight === null ? '未指定' : `${e.weight}kg`}</td>
         </tr>)}</tbody>
       </table>

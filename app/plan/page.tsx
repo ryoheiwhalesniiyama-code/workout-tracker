@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { groupExerciseRows } from '@/lib/exerciseRows'
 import {
   DndContext,
   closestCenter,
@@ -415,7 +416,7 @@ export default function PlanPage() {
                   <>
                     {menu.exercises && menu.exercises.length > 0 ? (
                       <div className="space-y-2">
-                        {menu.exercises.map((ex, i) => (
+                        {groupExerciseRows(menu.exercises).map((ex, i) => (
                           <div key={i} className="bg-gray-800 rounded-xl px-3 py-2 flex justify-between items-center">
                             <span className="text-sm font-medium">{ex.name}</span>
                             <span className="text-xs text-gray-400">{formatExercise(ex)}</span>
