@@ -28,18 +28,18 @@ export default function DateEditButton({ id, currentDate }: { id: string; curren
           type="date"
           value={date}
           onChange={e => setDate(e.target.value)}
-          className="bg-gray-800 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500 text-white"
+          className="bg-field rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-accent-hover text-foreground"
         />
         <button
           onClick={handleSave}
           disabled={saving}
-          className="bg-blue-600 hover:bg-blue-500 text-white rounded-lg px-3 py-1.5 text-xs font-medium"
+          className="bg-accent hover:bg-accent-hover text-white rounded-lg px-3 py-1.5 text-xs font-medium"
         >
           {saving ? '保存中...' : '保存'}
         </button>
         <button
           onClick={() => { setEditing(false); setDate(currentDate) }}
-          className="bg-gray-700 hover:bg-gray-600 text-white rounded-lg px-3 py-1.5 text-xs"
+          className="bg-stone-200 hover:bg-stone-300 text-foreground rounded-lg px-3 py-1.5 text-xs"
         >
           キャンセル
         </button>
@@ -50,7 +50,7 @@ export default function DateEditButton({ id, currentDate }: { id: string; curren
   return (
     <button
       onClick={() => setEditing(true)}
-      className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+      className="text-xs text-stone-600 hover:text-stone-800 transition-colors"
     >
       ✏️ 日付を編集
     </button>

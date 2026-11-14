@@ -186,33 +186,33 @@ export default function LogPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      <div className="flex items-center px-4 py-3 border-b border-gray-800 bg-gray-900">
-        <a href="/" className="text-gray-400 mr-3 text-xl">←</a>
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="flex items-center px-4 py-3 border-b border-stone-200 bg-surface">
+        <a href="/" className="text-stone-600 mr-3 text-xl">←</a>
         <h1 className="font-bold text-lg">ログを記録</h1>
       </div>
 
       <div className="px-4 py-6 max-w-lg mx-auto space-y-5">
         {/* 日付 */}
         <div>
-          <label className="text-sm text-gray-400 block mb-1">トレーニング日</label>
+          <label className="text-sm text-stone-600 block mb-1">トレーニング日</label>
           <input
             type="date"
             value={date}
             onChange={e => setDate(e.target.value)}
-            className="w-full bg-gray-800 rounded-xl px-4 py-3 text-white outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full bg-field rounded-xl px-4 py-3 text-foreground outline-none focus:ring-1 focus:ring-accent-hover"
           />
         </div>
 
         {/* 筋トレMEMO */}
         <div>
-          <label className="text-xs text-gray-400 block mb-1">筋トレMEMO</label>
+          <label className="text-xs text-stone-600 block mb-1">筋トレMEMO</label>
           <div
             onDrop={handleDrop}
             onDragOver={e => { e.preventDefault(); setIsDragOver(true) }}
             onDragLeave={() => setIsDragOver(false)}
             className={`border-2 border-dashed rounded-xl transition-colors ${
-              isDragOver ? 'border-blue-400 bg-blue-950/30' : 'border-gray-700'
+              isDragOver ? 'border-accent bg-accent-soft' : 'border-stone-400'
             }`}
           >
             <label className="block p-4 text-center cursor-pointer min-h-[100px] flex items-center justify-center">
@@ -220,7 +220,7 @@ export default function LogPage() {
               {preview ? (
                 <img src={preview} alt="preview" className="max-h-32 rounded-lg" />
               ) : (
-                <div className="text-gray-500">
+                <div className="text-stone-600">
                   <p className="text-2xl mb-1">📷</p>
                   <p className="text-xs">タップ / ドロップ</p>
                 </div>
@@ -231,9 +231,9 @@ export default function LogPage() {
 
         {/* 体組成（任意）① 体脂肪 ② 筋肉 */}
         <div>
-          <label className="text-xs text-gray-400 block mb-1">
+          <label className="text-xs text-stone-600 block mb-1">
             体組成（任意）
-            <span className="text-gray-600 ml-1">— タニタ①体脂肪 + ②筋肉の2枚</span>
+            <span className="text-stone-700 ml-1">— タニタ①体脂肪 + ②筋肉の2枚</span>
           </label>
           <div className="grid grid-cols-2 gap-2">
             {/* ① 体脂肪画面 */}
@@ -242,7 +242,7 @@ export default function LogPage() {
               onDragOver={e => { e.preventDefault(); setIsBodyDragOver1(true) }}
               onDragLeave={() => setIsBodyDragOver1(false)}
               className={`border-2 border-dashed rounded-xl transition-colors ${
-                isBodyDragOver1 ? 'border-green-400 bg-green-950/30' : 'border-gray-700'
+                isBodyDragOver1 ? 'border-accent bg-accent-soft' : 'border-stone-400'
               }`}
             >
               <label className="block p-3 text-center cursor-pointer min-h-[90px] flex flex-col items-center justify-center">
@@ -250,10 +250,10 @@ export default function LogPage() {
                 {bodyPreview1 ? (
                   <img src={bodyPreview1} alt="体脂肪" className="max-h-24 rounded-lg" />
                 ) : (
-                  <div className="text-gray-500">
+                  <div className="text-stone-600">
                     <p className="text-xl mb-1">①</p>
-                    <p className="text-xs font-medium text-gray-400">体脂肪</p>
-                    <p className="text-xs text-gray-600 mt-0.5">体重・脂肪率</p>
+                    <p className="text-xs font-medium text-stone-600">体脂肪</p>
+                    <p className="text-xs text-stone-700 mt-0.5">体重・脂肪率</p>
                   </div>
                 )}
               </label>
@@ -265,7 +265,7 @@ export default function LogPage() {
               onDragOver={e => { e.preventDefault(); setIsBodyDragOver2(true) }}
               onDragLeave={() => setIsBodyDragOver2(false)}
               className={`border-2 border-dashed rounded-xl transition-colors ${
-                isBodyDragOver2 ? 'border-green-400 bg-green-950/30' : 'border-gray-700'
+                isBodyDragOver2 ? 'border-accent bg-accent-soft' : 'border-stone-400'
               }`}
             >
               <label className="block p-3 text-center cursor-pointer min-h-[90px] flex flex-col items-center justify-center">
@@ -273,10 +273,10 @@ export default function LogPage() {
                 {bodyPreview2 ? (
                   <img src={bodyPreview2} alt="筋肉" className="max-h-24 rounded-lg" />
                 ) : (
-                  <div className="text-gray-500">
+                  <div className="text-stone-600">
                     <p className="text-xl mb-1">②</p>
-                    <p className="text-xs font-medium text-gray-400">筋肉</p>
-                    <p className="text-xs text-gray-600 mt-0.5">筋肉量(kg)</p>
+                    <p className="text-xs font-medium text-stone-600">筋肉</p>
+                    <p className="text-xs text-stone-700 mt-0.5">筋肉量(kg)</p>
                   </div>
                 )}
               </label>
@@ -285,73 +285,73 @@ export default function LogPage() {
         </div>
 
         {/* コンディション */}
-        <div className="bg-gray-900 rounded-xl p-4 space-y-3">
-          <p className="text-sm font-medium text-gray-300">コンディション（任意）</p>
+        <div className="bg-surface rounded-xl p-4 space-y-3">
+          <p className="text-sm font-medium text-stone-800">コンディション（任意）</p>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-gray-500">睡眠時間</label>
+              <label className="text-xs text-stone-600">睡眠時間</label>
               <input type="number" placeholder="8" value={sleepHours} onChange={e => setSleepHours(e.target.value)}
-                className="w-full bg-gray-800 rounded-lg px-3 py-2 text-sm outline-none mt-1" />
+                className="w-full bg-field rounded-lg px-3 py-2 text-sm outline-none mt-1" />
             </div>
             <div>
-              <label className="text-xs text-gray-500">体重 (kg)</label>
+              <label className="text-xs text-stone-600">体重 (kg)</label>
               <input type="number" placeholder="75.0" value={bodyWeight} onChange={e => setBodyWeight(e.target.value)}
-                className="w-full bg-gray-800 rounded-lg px-3 py-2 text-sm outline-none mt-1" />
+                className="w-full bg-field rounded-lg px-3 py-2 text-sm outline-none mt-1" />
             </div>
             <div>
-              <label className="text-xs text-gray-500">疲労度 (1-10)</label>
+              <label className="text-xs text-stone-600">疲労度 (1-10)</label>
               <input type="number" min="1" max="10" placeholder="5" value={fatigueLevel} onChange={e => setFatigueLevel(e.target.value)}
-                className="w-full bg-gray-800 rounded-lg px-3 py-2 text-sm outline-none mt-1" />
+                className="w-full bg-field rounded-lg px-3 py-2 text-sm outline-none mt-1" />
             </div>
             <div>
-              <label className="text-xs text-gray-500">モチベ (1-10)</label>
+              <label className="text-xs text-stone-600">モチベ (1-10)</label>
               <input type="number" min="1" max="10" placeholder="8" value={motivation} onChange={e => setMotivation(e.target.value)}
-                className="w-full bg-gray-800 rounded-lg px-3 py-2 text-sm outline-none mt-1" />
+                className="w-full bg-field rounded-lg px-3 py-2 text-sm outline-none mt-1" />
             </div>
           </div>
           <div>
-            <label className="text-xs text-gray-500">メモ（AIコーチが参考にします）</label>
+            <label className="text-xs text-stone-600">メモ（AIコーチが参考にします）</label>
             <textarea
               placeholder="エルボースリーブを初使用。ライイングエクステンションの感触が良かった..."
               value={notes}
               onChange={e => setNotes(e.target.value)}
-              className="w-full bg-gray-800 rounded-lg px-3 py-2 text-sm outline-none mt-1 resize-none"
+              className="w-full bg-field rounded-lg px-3 py-2 text-sm outline-none mt-1 resize-none"
               rows={4}
             />
           </div>
         </div>
 
         {/* エラー */}
-        {error && <p className="text-red-400 text-sm">{error}</p>}
+        {error && <p className="text-red-800 text-sm">{error}</p>}
 
         {/* 抽出結果 */}
         {result && (
-          <div className="bg-green-900/30 border border-green-700 rounded-xl p-4">
-            <p className="text-green-400 font-medium mb-2">✅ 保存しました！</p>
+          <div className="bg-accent-soft border border-accent-line rounded-xl p-4">
+            <p className="text-accent font-medium mb-2">✅ 保存しました！</p>
             {result.bodyOnly ? (
-              <p className="text-sm text-gray-300">体組成データを記録しました</p>
+              <p className="text-sm text-stone-800">体組成データを記録しました</p>
             ) : (
               result.exercises?.map((ex: any, i: number) => (
-                <div key={i} className="text-sm text-gray-300 mb-1">
+                <div key={i} className="text-sm text-stone-800 mb-1">
                   <span className="font-medium">{ex.name}</span>: {ex.sets?.length}セット
                 </div>
               ))
             )}
             {(bodyFile1 || bodyFile2) && !bodyError && (
-              <p className="text-xs text-green-300 mt-1">
+              <p className="text-xs text-accent mt-1">
                 ⚖️ 体組成データも保存しました（{[bodyFile1 && '①体脂肪', bodyFile2 && '②筋肉'].filter(Boolean).join(' + ')}）
               </p>
             )}
             {bodyError && (
-              <p className="text-xs text-red-400 mt-1">⚠️ {bodyError}</p>
+              <p className="text-xs text-red-800 mt-1">⚠️ {bodyError}</p>
             )}
             <div className="flex gap-2 mt-3">
               <button onClick={() => router.push('/chat')}
-                className="flex-1 bg-blue-600 hover:bg-blue-500 rounded-lg py-2 text-sm font-medium transition-colors">
+                className="flex-1 bg-accent hover:bg-accent-hover rounded-lg py-2 text-sm font-medium transition-colors text-white">
                 AIにレビューしてもらう
               </button>
               <button onClick={() => router.push('/')}
-                className="flex-1 bg-gray-700 hover:bg-gray-600 rounded-lg py-2 text-sm font-medium transition-colors">
+                className="flex-1 bg-stone-200 hover:bg-stone-300 rounded-lg py-2 text-sm font-medium transition-colors">
                 ホームへ
               </button>
             </div>
@@ -363,7 +363,7 @@ export default function LogPage() {
           <button
             onClick={handleUpload}
             disabled={!canSave || loading}
-            className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 disabled:text-gray-500 rounded-xl py-4 font-bold transition-colors"
+            className="w-full bg-accent hover:bg-accent-hover disabled:bg-stone-200 disabled:text-stone-600 rounded-xl py-4 font-bold transition-colors text-white"
           >
             {loading
               ? '解析中...'

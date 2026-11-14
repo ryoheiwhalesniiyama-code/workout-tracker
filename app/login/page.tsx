@@ -36,12 +36,12 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center px-4">
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <p className="text-5xl mb-3">🏋️</p>
           <h1 className="text-xl font-bold">Workout Tracker</h1>
-          <p className="text-gray-500 text-sm mt-1">パスワードを入力してください</p>
+          <p className="text-stone-600 text-sm mt-1">パスワードを入力してください</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -50,18 +50,18 @@ export default function LoginPage() {
             value={password}
             onChange={e => setPassword(e.target.value)}
             placeholder="パスワード"
-            className="w-full bg-gray-800 rounded-xl px-4 py-3 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full bg-field rounded-xl px-4 py-3 text-sm outline-none focus:ring-1 focus:ring-accent-hover"
             autoFocus
           />
 
           {error && (
-            <p className="text-red-400 text-sm text-center">{error}</p>
+            <p className="text-red-800 text-sm text-center">{error}</p>
           )}
 
           <button
             type="submit"
             disabled={loading || !password}
-            className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 disabled:text-gray-500 rounded-xl py-3 text-sm font-bold transition-colors"
+            className="w-full bg-accent hover:bg-accent-hover disabled:bg-stone-200 disabled:text-stone-600 rounded-xl py-3 text-sm font-bold transition-colors text-white"
           >
             {loading ? '確認中...' : 'ログイン'}
           </button>

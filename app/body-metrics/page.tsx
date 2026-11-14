@@ -14,9 +14,9 @@ type BodyMetric = {
 type MetricKey = 'body_weight' | 'muscle_mass' | 'body_fat_percent'
 
 const METRICS: { key: MetricKey; label: string; unit: string; color: string; short: string }[] = [
-  { key: 'body_weight', label: '体重', unit: 'kg', color: '#3b82f6', short: '体重' },
-  { key: 'muscle_mass', label: '筋肉量', unit: 'kg', color: '#10b981', short: '筋肉量' },
-  { key: 'body_fat_percent', label: '体脂肪率', unit: '%', color: '#f59e0b', short: '脂肪率' },
+  { key: 'body_weight', label: '体重', unit: 'kg', color: '#245643', short: '体重' },
+  { key: 'muscle_mass', label: '筋肉量', unit: 'kg', color: '#34785d', short: '筋肉量' },
+  { key: 'body_fat_percent', label: '体脂肪率', unit: '%', color: '#9a622e', short: '脂肪率' },
 ]
 
 export default function BodyMetricsPage() {
@@ -44,12 +44,12 @@ export default function BodyMetricsPage() {
   const diff = latest !== null && oldest !== null ? Number((Number(latest) - Number(oldest)).toFixed(1)) : null
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      <div className="flex items-center px-4 py-3 border-b border-gray-800 bg-gray-900">
-        <Link href="/" className="text-gray-400 mr-3 text-xl">←</Link>
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="flex items-center px-4 py-3 border-b border-stone-200 bg-surface">
+        <Link href="/" className="text-stone-600 mr-3 text-xl">←</Link>
         <div>
           <h1 className="font-bold text-lg">体組成推移</h1>
-          <p className="text-xs text-gray-500">体重・筋肉量・体脂肪率の変化</p>
+          <p className="text-xs text-stone-600">体重・筋肉量・体脂肪率の変化</p>
         </div>
       </div>
 
@@ -62,7 +62,7 @@ export default function BodyMetricsPage() {
               key={m.key}
               onClick={() => setSelected(m.key)}
               className={`flex-1 py-2.5 rounded-xl text-xs font-medium transition-colors ${
-                selected === m.key ? 'text-white' : 'bg-gray-800 text-gray-400'
+                selected === m.key ? 'text-white' : 'bg-field text-stone-600'
               }`}
               style={selected === m.key ? { backgroundColor: m.color } : undefined}
             >
@@ -72,23 +72,23 @@ export default function BodyMetricsPage() {
         </div>
 
         {/* 最新値カード */}
-        <div className="bg-gray-900 rounded-2xl p-4 flex justify-between items-center">
+        <div className="bg-surface rounded-2xl p-4 flex justify-between items-center">
           <div>
-            <p className="text-sm text-gray-400">{selectedMeta.label}</p>
+            <p className="text-sm text-stone-600">{selectedMeta.label}</p>
             <p className="text-3xl font-bold mt-1">
               {latest !== null ? latest : '-'}
-              <span className="text-base text-gray-400 ml-1">{selectedMeta.unit}</span>
+              <span className="text-base text-stone-600 ml-1">{selectedMeta.unit}</span>
             </p>
           </div>
           {diff !== null && (
             <div className="text-right">
-              <p className="text-xs text-gray-500">初回比</p>
+              <p className="text-xs text-stone-600">初回比</p>
               <p className={`text-xl font-bold mt-1 ${
                 selectedMeta.key === 'body_fat_percent'
-                  ? (diff <= 0 ? 'text-green-400' : 'text-red-400')
+                  ? (diff <= 0 ? 'text-accent' : 'text-red-800')
                   : selectedMeta.key === 'muscle_mass'
-                  ? (diff >= 0 ? 'text-green-400' : 'text-red-400')
-                  : 'text-gray-300'
+                  ? (diff >= 0 ? 'text-accent' : 'text-red-800')
+                  : 'text-stone-800'
               }`}>
                 {diff > 0 ? '+' : ''}{diff}{selectedMeta.unit}
               </p>
@@ -97,31 +97,31 @@ export default function BodyMetricsPage() {
         </div>
 
         {/* グラフ */}
-        <div className="bg-gray-900 rounded-2xl p-4">
-          <h2 className="font-bold mb-4 text-gray-200 text-sm">{selectedMeta.label}推移</h2>
+        <div className="bg-surface rounded-2xl p-4">
+          <h2 className="font-bold mb-4 text-stone-800 text-sm">{selectedMeta.label}推移</h2>
           {loading ? (
-            <p className="text-gray-500 text-sm text-center py-8">読み込み中...</p>
+            <p className="text-stone-600 text-sm text-center py-8">読み込み中...</p>
           ) : chartData.length < 2 ? (
-            <p className="text-gray-500 text-sm text-center py-8">
+            <p className="text-stone-600 text-sm text-center py-8">
               データが2件以上になるとグラフが表示されます
             </p>
           ) : (
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#ded8ca" />
                 <XAxis
                   dataKey="date"
-                  tick={{ fill: '#9ca3af', fontSize: 10 }}
+                  tick={{ fill: '#57534e', fontSize: 10 }}
                   tickFormatter={d => String(d).slice(5)}
                 />
                 <YAxis
-                  tick={{ fill: '#9ca3af', fontSize: 10 }}
+                  tick={{ fill: '#57534e', fontSize: 10 }}
                   domain={['auto', 'auto']}
                 />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px' }}
-                  labelStyle={{ color: '#9ca3af', fontSize: 12 }}
-                  itemStyle={{ color: '#fff' }}
+                  contentStyle={{ backgroundColor: '#fffdf8', border: 'none', borderRadius: '8px' }}
+                  labelStyle={{ color: '#57534e', fontSize: 12 }}
+                  itemStyle={{ color: '#292524' }}
                   formatter={(v: unknown) => [`${v ?? '-'}${selectedMeta.unit}`, selectedMeta.label] as [string, string]}
                 />
                 <Line
@@ -139,11 +139,11 @@ export default function BodyMetricsPage() {
 
         {/* データなし */}
         {!loading && metrics.length === 0 && (
-          <div className="bg-gray-900 rounded-2xl p-6 text-center">
+          <div className="bg-surface rounded-2xl p-6 text-center">
             <p className="text-4xl mb-3">⚖️</p>
-            <p className="text-gray-400 text-sm">体組成データがまだありません</p>
-            <p className="text-gray-600 text-xs mt-2">ログ記録画面でタニタの①体脂肪・②筋肉画面をアップロードしてください</p>
-            <Link href="/log" className="inline-block mt-4 bg-blue-600 hover:bg-blue-500 rounded-xl px-4 py-2 text-sm font-medium transition-colors">
+            <p className="text-stone-600 text-sm">体組成データがまだありません</p>
+            <p className="text-stone-700 text-xs mt-2">ログ記録画面でタニタの①体脂肪・②筋肉画面をアップロードしてください</p>
+            <Link href="/log" className="inline-block mt-4 bg-accent hover:bg-accent-hover rounded-xl px-4 py-2 text-sm font-medium transition-colors text-white">
               ログを記録する
             </Link>
           </div>
@@ -151,21 +151,21 @@ export default function BodyMetricsPage() {
 
         {/* 記録一覧 */}
         {metrics.length > 0 && (
-          <div className="bg-gray-900 rounded-2xl p-4">
-            <h2 className="font-bold mb-3 text-gray-200 text-sm">記録一覧（直近10件）</h2>
+          <div className="bg-surface rounded-2xl p-4">
+            <h2 className="font-bold mb-3 text-stone-800 text-sm">記録一覧（直近10件）</h2>
             <div className="space-y-1">
               {[...metrics].reverse().slice(0, 10).map((m, i) => (
-                <div key={i} className="flex justify-between items-center bg-gray-800 rounded-lg px-3 py-2">
-                  <span className="text-xs text-gray-400">{m.date}</span>
+                <div key={i} className="flex justify-between items-center bg-field rounded-lg px-3 py-2">
+                  <span className="text-xs text-stone-600">{m.date}</span>
                   <div className="flex gap-4 text-sm">
-                    <span>{m.body_weight ?? '-'}<span className="text-xs text-gray-500">kg</span></span>
-                    <span>{m.muscle_mass ?? '-'}<span className="text-xs text-gray-500">kg</span></span>
-                    <span>{m.body_fat_percent ?? '-'}<span className="text-xs text-gray-500">%</span></span>
+                    <span>{m.body_weight ?? '-'}<span className="text-xs text-stone-600">kg</span></span>
+                    <span>{m.muscle_mass ?? '-'}<span className="text-xs text-stone-600">kg</span></span>
+                    <span>{m.body_fat_percent ?? '-'}<span className="text-xs text-stone-600">%</span></span>
                   </div>
                 </div>
               ))}
             </div>
-            <div className="flex justify-between text-xs text-gray-600 px-3 mt-1">
+            <div className="flex justify-between text-xs text-stone-700 px-3 mt-1">
               <span></span>
               <div className="flex gap-4">
                 <span>体重</span>

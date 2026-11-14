@@ -27,91 +27,91 @@ export default async function HomePage() {
   const total = benchPR + squatPR + deadliftPR
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen bg-background text-foreground">
       {/* ヘッダー */}
-      <div className="px-4 py-4 border-b border-gray-800 bg-gray-900">
+      <div className="px-4 py-4 border-b border-stone-200 bg-surface">
         <h1 className="text-xl font-bold flex items-center gap-2">
           <img src="/icon.png" alt="icon" className="w-8 h-8 rounded-lg" />
           Workout Tracker
         </h1>
-        <p className="text-gray-400 text-sm mt-0.5">目標: Big3 370kg total</p>
+        <p className="text-stone-600 text-sm mt-0.5">目標: Big3 370kg total</p>
       </div>
 
       <div className="px-4 py-5 max-w-lg mx-auto space-y-5">
 
         {/* アクションボタン（上部） */}
         <div className="grid grid-cols-3 gap-3">
-          <Link href="/log" className="bg-blue-600 hover:bg-blue-500 active:bg-blue-700 rounded-2xl p-4 text-center transition-colors">
+          <Link href="/log" className="bg-accent hover:bg-accent-hover active:bg-accent-pressed rounded-2xl p-4 text-center transition-colors text-white">
             <p className="text-3xl mb-1">📷</p>
             <p className="font-bold text-sm">ログを記録</p>
-            <p className="text-xs text-blue-200 mt-0.5">スクショ</p>
+            <p className="text-xs text-white mt-0.5">スクショ</p>
           </Link>
-          <Link href="/plan" className="bg-gray-800 hover:bg-gray-700 active:bg-gray-600 rounded-2xl p-4 text-center transition-colors">
+          <Link href="/plan" className="bg-field hover:bg-stone-200 active:bg-stone-300 rounded-2xl p-4 text-center transition-colors">
             <p className="text-3xl mb-1">📋</p>
             <p className="font-bold text-sm">次回メニュー</p>
-            <p className="text-xs text-gray-400 mt-0.5">AIコーチ提案</p>
+            <p className="text-xs text-stone-600 mt-0.5">AIコーチ提案</p>
           </Link>
-          <Link href="/chat" className="bg-gray-800 hover:bg-gray-700 active:bg-gray-600 rounded-2xl p-4 text-center transition-colors">
+          <Link href="/chat" className="bg-field hover:bg-stone-200 active:bg-stone-300 rounded-2xl p-4 text-center transition-colors">
             <p className="text-3xl mb-1">🤖</p>
             <p className="font-bold text-sm">AIコーチ</p>
-            <p className="text-xs text-gray-400 mt-0.5">レビュー・相談</p>
+            <p className="text-xs text-stone-600 mt-0.5">レビュー・相談</p>
           </Link>
         </div>
         <div className="grid grid-cols-3 gap-3">
-          <Link href="/progress" className="block bg-gray-800 hover:bg-gray-700 active:bg-gray-600 rounded-2xl p-4 text-center transition-colors">
+          <Link href="/progress" className="block bg-field hover:bg-stone-200 active:bg-stone-300 rounded-2xl p-4 text-center transition-colors">
             <p className="text-2xl mb-1">📈</p>
             <p className="font-bold text-sm">Big3</p>
-            <p className="text-xs text-gray-400 mt-0.5">重量推移</p>
+            <p className="text-xs text-stone-600 mt-0.5">重量推移</p>
           </Link>
-          <Link href="/body-metrics" className="block bg-gray-800 hover:bg-gray-700 active:bg-gray-600 rounded-2xl p-4 text-center transition-colors">
+          <Link href="/body-metrics" className="block bg-field hover:bg-stone-200 active:bg-stone-300 rounded-2xl p-4 text-center transition-colors">
             <p className="text-2xl mb-1">⚖️</p>
             <p className="font-bold text-sm">体組成</p>
-            <p className="text-xs text-gray-400 mt-0.5">体重・筋肉量</p>
+            <p className="text-xs text-stone-600 mt-0.5">体重・筋肉量</p>
           </Link>
-          <Link href="/import" className="block bg-gray-800 hover:bg-gray-700 active:bg-gray-600 rounded-2xl p-4 text-center transition-colors">
+          <Link href="/import" className="block bg-field hover:bg-stone-200 active:bg-stone-300 rounded-2xl p-4 text-center transition-colors">
             <p className="text-2xl mb-1">📦</p>
             <p className="font-bold text-sm">インポート</p>
-            <p className="text-xs text-gray-400 mt-0.5">一括取り込み</p>
+            <p className="text-xs text-stone-600 mt-0.5">一括取り込み</p>
           </Link>
         </div>
 
         {/* Big3 進捗（中部） */}
-        <div className="bg-gray-900 rounded-2xl p-4">
-          <h2 className="font-bold mb-3 text-gray-200">Big3 現在値</h2>
+        <div className="bg-surface rounded-2xl p-4">
+          <h2 className="font-bold mb-3 text-stone-800">Big3 現在値</h2>
           <div className="grid grid-cols-3 gap-3 mb-4">
             {[
               { name: 'ベンチ', current: benchPR, target: 110 },
               { name: 'スクワット', current: squatPR, target: 120 },
               { name: 'デッドリフト', current: deadliftPR, target: 140 },
             ].map(({ name, current, target }) => (
-              <div key={name} className="bg-gray-800 rounded-xl p-3 text-center">
-                <p className="text-xs text-gray-400 mb-1">{name}</p>
-                <p className="text-xl font-bold text-white">{current}</p>
-                <p className="text-xs text-gray-500">目標 {target}kg</p>
-                <div className="mt-2 bg-gray-700 rounded-full h-1.5">
+              <div key={name} className="bg-field rounded-xl p-3 text-center">
+                <p className="text-xs text-stone-600 mb-1">{name}</p>
+                <p className="text-xl font-bold text-foreground">{current}</p>
+                <p className="text-xs text-stone-600">目標 {target}kg</p>
+                <div className="mt-2 bg-stone-200 rounded-full h-1.5">
                   <div
-                    className="bg-blue-500 h-1.5 rounded-full"
+                    className="bg-accent-hover h-1.5 rounded-full"
                     style={{ width: `${Math.min((current / target) * 100, 100)}%` }}
                   />
                 </div>
               </div>
             ))}
           </div>
-          <div className="bg-gray-800 rounded-xl p-3 flex justify-between items-center">
-            <span className="text-gray-400 text-sm">トータル</span>
+          <div className="bg-field rounded-xl p-3 flex justify-between items-center">
+            <span className="text-stone-600 text-sm">トータル</span>
             <div className="text-right">
-              <span className="text-2xl font-bold text-blue-400">{total}kg</span>
-              <span className="text-gray-500 text-sm ml-2">/ 370kg</span>
+              <span className="text-2xl font-bold text-accent">{total}kg</span>
+              <span className="text-stone-600 text-sm ml-2">/ 370kg</span>
             </div>
           </div>
         </div>
 
         {/* 体組成 */}
         {latestMetric && (
-          <Link href="/body-metrics" className="block bg-gray-900 rounded-2xl p-4 hover:bg-gray-800 transition-colors">
+          <Link href="/body-metrics" className="block bg-surface rounded-2xl p-4 hover:bg-field transition-colors">
             <div className="flex justify-between items-center mb-3">
-              <h2 className="font-bold text-gray-200">最新の体組成</h2>
-              <span className="text-xs text-gray-500">推移グラフ →</span>
+              <h2 className="font-bold text-stone-800">最新の体組成</h2>
+              <span className="text-xs text-stone-600">推移グラフ →</span>
             </div>
             <div className="grid grid-cols-3 gap-3">
               {[
@@ -119,9 +119,9 @@ export default async function HomePage() {
                 { label: '筋肉量', value: latestMetric.muscle_mass, unit: 'kg' },
                 { label: '体脂肪率', value: latestMetric.body_fat_percent, unit: '%' },
               ].map(({ label, value, unit }) => (
-                <div key={label} className="bg-gray-800 rounded-xl p-3 text-center">
-                  <p className="text-xs text-gray-400">{label}</p>
-                  <p className="text-lg font-bold mt-1">{value ?? '-'}<span className="text-xs text-gray-400">{unit}</span></p>
+                <div key={label} className="bg-field rounded-xl p-3 text-center">
+                  <p className="text-xs text-stone-600">{label}</p>
+                  <p className="text-lg font-bold mt-1">{value ?? '-'}<span className="text-xs text-stone-600">{unit}</span></p>
                 </div>
               ))}
             </div>
@@ -129,8 +129,8 @@ export default async function HomePage() {
         )}
 
         {/* トレーニング履歴（下部） */}
-        <div className="bg-gray-900 rounded-2xl p-4">
-          <h2 className="font-bold mb-3 text-gray-200">トレーニング履歴</h2>
+        <div className="bg-surface rounded-2xl p-4">
+          <h2 className="font-bold mb-3 text-stone-800">トレーニング履歴</h2>
           <WorkoutHistory />
         </div>
 

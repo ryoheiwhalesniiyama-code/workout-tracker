@@ -79,21 +79,21 @@ function SortableRow({ exercise, onDelete }: { exercise: EditExercise; onDelete:
     <div
       ref={setNodeRef}
       style={style}
-      className="bg-gray-800 rounded-xl px-3 py-2 flex items-center gap-2"
+      className="bg-field rounded-xl px-3 py-2 flex items-center gap-2"
     >
       <button
         {...attributes}
         {...listeners}
-        className="text-gray-500 hover:text-gray-300 cursor-grab active:cursor-grabbing touch-none select-none px-1 text-lg leading-none"
+        className="text-stone-600 hover:text-stone-800 cursor-grab active:cursor-grabbing touch-none select-none px-1 text-lg leading-none"
         aria-label="並び替え"
       >
         ⠿
       </button>
       <span className="text-sm font-medium flex-1">{exercise.name}</span>
-      <span className="text-xs text-gray-400">{formatExercise(exercise)}</span>
+      <span className="text-xs text-stone-600">{formatExercise(exercise)}</span>
       <button
         onClick={onDelete}
-        className="text-gray-600 hover:text-red-400 text-base leading-none px-1 shrink-0"
+        className="text-stone-700 hover:text-red-800 text-base leading-none px-1 shrink-0"
         aria-label="この種目を削除"
       >
         ×
@@ -114,15 +114,15 @@ function AddExerciseForm({
   onAdd: () => void
 }) {
   return (
-    <div className="border border-gray-700 rounded-xl p-3 space-y-2">
-      <p className="text-xs text-gray-400">種目を追加</p>
+    <div className="border border-stone-400 rounded-xl p-3 space-y-2">
+      <p className="text-xs text-stone-600">種目を追加</p>
       <input
         type="text"
         placeholder="種目名（例：サイドレイズ）"
         value={form.name}
         onChange={e => onChange({ ...form, name: e.target.value })}
         onKeyDown={e => { if (e.key === 'Enter') onAdd() }}
-        className="w-full bg-gray-800 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        className="w-full bg-field rounded-lg px-3 py-2 text-sm text-foreground placeholder-stone-600 focus:outline-none focus:ring-1 focus:ring-accent-hover"
       />
       <div className="flex items-center gap-1.5">
         <input
@@ -130,29 +130,29 @@ function AddExerciseForm({
           placeholder="セット"
           value={form.sets}
           onChange={e => onChange({ ...form, sets: e.target.value })}
-          className="w-16 bg-gray-800 rounded-lg px-2 py-2 text-sm text-center text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-16 bg-field rounded-lg px-2 py-2 text-sm text-center text-foreground placeholder-stone-600 focus:outline-none focus:ring-1 focus:ring-accent-hover"
         />
-        <span className="text-gray-500 text-xs">×</span>
+        <span className="text-stone-600 text-xs">×</span>
         <input
           type="number"
           placeholder="rep"
           value={form.reps}
           onChange={e => onChange({ ...form, reps: e.target.value })}
-          className="w-16 bg-gray-800 rounded-lg px-2 py-2 text-sm text-center text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-16 bg-field rounded-lg px-2 py-2 text-sm text-center text-foreground placeholder-stone-600 focus:outline-none focus:ring-1 focus:ring-accent-hover"
         />
-        <span className="text-gray-500 text-xs">rep @</span>
+        <span className="text-stone-600 text-xs">rep @</span>
         <input
           type="number"
           placeholder="kg"
           value={form.weight}
           onChange={e => onChange({ ...form, weight: e.target.value })}
-          className="w-16 bg-gray-800 rounded-lg px-2 py-2 text-sm text-center text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-16 bg-field rounded-lg px-2 py-2 text-sm text-center text-foreground placeholder-stone-600 focus:outline-none focus:ring-1 focus:ring-accent-hover"
         />
-        <span className="text-gray-500 text-xs">kg</span>
+        <span className="text-stone-600 text-xs">kg</span>
         <button
           onClick={onAdd}
           disabled={!form.name.trim()}
-          className="ml-auto text-xs bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white rounded-lg px-3 py-2 whitespace-nowrap"
+          className="ml-auto text-xs bg-stone-200 hover:bg-stone-300 disabled:opacity-40 text-foreground rounded-lg px-3 py-2 whitespace-nowrap"
         >
           追加
         </button>
@@ -272,22 +272,22 @@ export default function PlanPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      <div className="flex items-center px-4 py-3 border-b border-gray-800 bg-gray-900">
-        <Link href="/" className="text-gray-400 mr-3 text-xl">←</Link>
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="flex items-center px-4 py-3 border-b border-stone-200 bg-surface">
+        <Link href="/" className="text-stone-600 mr-3 text-xl">←</Link>
         <div>
           <h1 className="font-bold text-lg">次回メニュー</h1>
-          <p className="text-xs text-gray-500">AIコーチが提案した次回プラン</p>
+          <p className="text-xs text-stone-600">AIコーチが提案した次回プラン</p>
         </div>
       </div>
 
       <div className="px-4 py-5 max-w-lg mx-auto space-y-4">
         {loading ? (
-          <p className="text-center text-gray-500 text-sm mt-20">読み込み中...</p>
+          <p className="text-center text-stone-600 text-sm mt-20">読み込み中...</p>
         ) : error ? (
-          <p className="text-center text-red-400 text-sm mt-20">{error}</p>
+          <p className="text-center text-red-800 text-sm mt-20">{error}</p>
         ) : menus.length === 0 ? (
-          <div className="text-center text-gray-500 mt-20">
+          <div className="text-center text-stone-600 mt-20">
             <p className="text-4xl mb-4">📋</p>
             <p>まだ次回メニューがありません</p>
             <p className="text-sm mt-2">AIコーチで「書き出す」ボタンを押すと保存されます</p>
@@ -296,20 +296,20 @@ export default function PlanPage() {
           menus.map((menu, index) => {
             const isEditing = editingId === menu.id
             return (
-              <div key={menu.id} className="bg-gray-900 rounded-2xl p-4 space-y-3">
+              <div key={menu.id} className="bg-surface rounded-2xl p-4 space-y-3">
                 {/* ヘッダー */}
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2 flex-1 min-w-0">
                     {index === 0 && (
-                      <span className="text-xs bg-blue-600 text-white rounded-full px-2 py-0.5 shrink-0">最新</span>
+                      <span className="text-xs bg-accent text-white rounded-full px-2 py-0.5 shrink-0">最新</span>
                     )}
-                    <span className="text-sm font-bold text-blue-300 truncate">
+                    <span className="text-sm font-bold text-accent truncate">
                       📅 {formatDate(menu.planned_date)}
                     </span>
                     {!isEditing && (
                       <button
                         onClick={() => startEdit(menu)}
-                        className="shrink-0 w-6 h-6 rounded-full bg-gray-700 hover:bg-gray-600 text-gray-300 flex items-center justify-center text-base leading-none"
+                        className="shrink-0 w-6 h-6 rounded-full bg-stone-200 hover:bg-stone-300 text-stone-800 flex items-center justify-center text-base leading-none"
                         aria-label="種目を追加・並び替え"
                         title="種目を追加・並び替え"
                       >
@@ -318,14 +318,14 @@ export default function PlanPage() {
                     )}
                   </div>
                   <div className="flex items-center gap-2 shrink-0 ml-2">
-                    <span className="text-xs text-gray-600">
+                    <span className="text-xs text-stone-700">
                       保存: {new Date(menu.created_at).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })}
                     </span>
                     {!isEditing && (
                       <button
                         onClick={() => deleteMenu(menu.id)}
                         disabled={deletingId === menu.id}
-                        className="text-gray-600 hover:text-red-400 disabled:opacity-40 text-xs px-1"
+                        className="text-stone-700 hover:text-red-800 disabled:opacity-40 text-xs px-1"
                         aria-label="削除"
                         title="メニューを削除"
                       >
@@ -339,13 +339,13 @@ export default function PlanPage() {
                   <>
                     {/* 日付（編集） */}
                     <div className="space-y-1">
-                      <p className="text-xs text-gray-400">📅 実施予定日</p>
+                      <p className="text-xs text-stone-600">📅 実施予定日</p>
                       <input
                         type="date"
                         value={editDate}
                         onChange={e => setEditDate(e.target.value)}
-                        style={{ colorScheme: 'dark' }}
-                        className="w-full bg-gray-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        style={{ colorScheme: 'light' }}
+                        className="w-full bg-field rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-accent-hover"
                       />
                     </div>
 
@@ -361,7 +361,7 @@ export default function PlanPage() {
                       >
                         <div className="space-y-2">
                           {editExercises.length === 0 ? (
-                            <p className="text-xs text-gray-600 text-center py-2">種目なし</p>
+                            <p className="text-xs text-stone-700 text-center py-2">種目なし</p>
                           ) : (
                             editExercises.map(ex => (
                               <SortableRow
@@ -384,13 +384,13 @@ export default function PlanPage() {
 
                     {/* 備考（編集） */}
                     <div className="space-y-1">
-                      <p className="text-xs text-gray-400">📝 備考（任意）</p>
+                      <p className="text-xs text-stone-600">📝 備考（任意）</p>
                       <textarea
                         value={editNotes}
                         onChange={e => setEditNotes(e.target.value)}
                         placeholder="方針・注意点など（AIコーチとの会話内容を貼っても）"
                         rows={3}
-                        className="w-full bg-gray-800 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                        className="w-full bg-field rounded-lg px-3 py-2 text-sm text-foreground placeholder-stone-600 focus:outline-none focus:ring-1 focus:ring-accent-hover resize-none"
                       />
                     </div>
 
@@ -398,14 +398,14 @@ export default function PlanPage() {
                     <div className="flex gap-2 pt-1">
                       <button
                         onClick={cancelEdit}
-                        className="flex-1 text-sm text-gray-400 border border-gray-700 rounded-xl py-2.5 hover:bg-gray-800"
+                        className="flex-1 text-sm text-stone-600 border border-stone-400 rounded-xl py-2.5 hover:bg-field"
                       >
                         キャンセル
                       </button>
                       <button
                         onClick={() => saveEdit(menu.id)}
                         disabled={saving}
-                        className="flex-1 text-sm bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white rounded-xl py-2.5 font-medium"
+                        className="flex-1 text-sm bg-accent hover:bg-accent-hover disabled:opacity-60 text-white rounded-xl py-2.5 font-medium"
                       >
                         {saving ? '保存中...' : '保存する ✅'}
                       </button>
@@ -417,22 +417,22 @@ export default function PlanPage() {
                     {menu.exercises && menu.exercises.length > 0 ? (
                       <div className="space-y-2">
                         {groupExerciseRows(menu.exercises).map((ex, i) => (
-                          <div key={i} className="bg-gray-800 rounded-xl px-3 py-2 flex justify-between items-center">
+                          <div key={i} className="bg-field rounded-xl px-3 py-2 flex justify-between items-center">
                             <span className="text-sm font-medium">{ex.name}</span>
-                            <span className="text-xs text-gray-400">{formatExercise(ex)}</span>
+                            <span className="text-xs text-stone-600">{formatExercise(ex)}</span>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-gray-300 whitespace-pre-wrap leading-relaxed">
+                      <p className="text-sm text-stone-800 whitespace-pre-wrap leading-relaxed">
                         {stripMarkdown(menu.content)}
                       </p>
                     )}
                     {/* 備考（表示） */}
                     {menu.notes && (
-                      <div className="border-t border-gray-800 pt-2 mt-1">
-                        <p className="text-xs text-gray-500 mb-1">📝 備考</p>
-                        <p className="text-xs text-gray-400 whitespace-pre-wrap leading-relaxed">{menu.notes}</p>
+                      <div className="border-t border-stone-200 pt-2 mt-1">
+                        <p className="text-xs text-stone-600 mb-1">📝 備考</p>
+                        <p className="text-xs text-stone-600 whitespace-pre-wrap leading-relaxed">{menu.notes}</p>
                       </div>
                     )}
                   </>
