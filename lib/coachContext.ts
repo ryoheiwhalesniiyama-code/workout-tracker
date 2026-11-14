@@ -1,6 +1,6 @@
 import { supabaseAdmin } from './supabase'
 import { HISTORY_LIMIT, selectHistory, reviewCards, type CoachMessage, type SavedPlan, type Workout, type WorkoutSet } from './coachMemory'
-import { jstDate } from './coachDates'
+import { addDays, jstDate } from './coachDates'
 
 export async function loadCoachHistory(): Promise<CoachMessage[]> {
   const { data, error } = await supabaseAdmin.from('chat_messages')
@@ -13,9 +13,9 @@ export async function loadCoachHistory(): Promise<CoachMessage[]> {
   return selectHistory(rows)
 }
 
-export async function loadCoachContext() {
+export async function loadCoachContext(today = jstDate()) {
   const results = await Promise.all([
-    supabaseAdmin.from('workout_logs').select('*').order('date', { ascending: false }).limit(40),
+    supabaseAdmin.from('workout_logs').select('*').gte('date', addDays(today, -29)).lte('date', today).order('date', { ascending: false }),
     supabaseAdmin.from('body_metrics').select('*').order('date', { ascending: false }).limit(20),
     supabaseAdmin.from('fatigue_notes').select('*').order('date', { ascending: false }).limit(10),
     supabaseAdmin.from('planned_menus').select('id, planned_date, content, notes, exercises').order('created_at', { ascending: false }).limit(30),
@@ -35,6 +35,6 @@ export async function loadCoachContext() {
     bodyMetrics: results[1].data ?? [],
     fatigueNotes: results[2].data ?? [],
     plannedMenus: plans,
-    reviews: reviewCards(plans, workouts, jstDate()),
+    reviews: reviewCards(plans, workouts, today),
   }
 }

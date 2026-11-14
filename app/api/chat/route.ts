@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'メッセージは1〜10000文字で入力してください' }, { status: 400 })
     }
     const today = jstDate()
-    const [context, history] = await Promise.all([loadCoachContext(), loadCoachHistory()])
+    const [context, history] = await Promise.all([loadCoachContext(today), loadCoachHistory()])
     const references = [...context.workoutLogs.map(l => l.date), ...context.plannedMenus.flatMap(p => p.planned_date ? [p.planned_date] : []),
       ...history.flatMap(m => m.session_id ? [m.session_id] : [])]
     const messages: Anthropic.MessageParam[] = history.map(row => {
@@ -30,14 +30,30 @@ export async function POST(req: NextRequest) {
       }
     })
     messages.push({ role: 'user', content: `[発言日: ${today}]\n${message.trim()}` })
-    const response = await anthropic.messages.create({
+    let historyStart = 0
+    let workoutCount = context.workoutLogs.length
+    const createPayload = () => ({
       model: 'claude-sonnet-4-5', max_tokens: 4096,
-      system: buildSystemPrompt(context, today), messages,
-      tools: [COACH_TOOL], tool_choice: { type: 'tool', name: COACH_TOOL.name },
+      system: buildSystemPrompt({ ...context, workoutLogs: context.workoutLogs.slice(0, workoutCount) }, today), messages: messages.slice(historyStart),
+      tools: [COACH_TOOL], tool_choice: { type: 'tool' as const, name: COACH_TOOL.name },
     })
+    let payload = createPayload()
+    // JSON全体のUTF-8バイト数で入力トークンに余裕を持たせる。
+    while (Buffer.byteLength(JSON.stringify(payload), 'utf8') > 160_000) {
+      if (historyStart < history.length) {
+        do { historyStart++ } while (historyStart < history.length && messages[historyStart].role === 'assistant')
+      } else if (workoutCount > 0) {
+        workoutCount--
+      } else {
+        return NextResponse.json({ error: '参照する計画や記録の量が多く、コーチに送信できませんでした。' }, { status: 413 })
+      }
+      payload = createPayload()
+    }
+    const response = await anthropic.messages.create(payload)
+    const firstSent = history[historyStart]
     console.info('coach_request', {
       model: response.model, stopReason: response.stop_reason, usage: response.usage,
-      historyCount: history.length, elapsedMs: Date.now() - started,
+      historyCount: history.length - historyStart, elapsedMs: Date.now() - started,
     })
     if (response.stop_reason === 'max_tokens') {
       return NextResponse.json({ error: '回答が長くなり途中で止まりました。相談を分けて再送してください。' }, { status: 502 })
@@ -53,9 +69,11 @@ export async function POST(req: NextRequest) {
     ])
     if (error) throw new Error('会話を保存できませんでした。この発言は次回に引き継がれないため、もう一度送信してください。')
     return NextResponse.json({ ...reply, session_id: today, reviews: context.reviews.slice(0, 3),
-      contextStart: history[0]?.created_at ? jstDate(new Date(history[0].created_at)) : history[0]?.session_id ?? today })
+      contextStart: firstSent?.created_at ? jstDate(new Date(firstSent.created_at)) : firstSent?.session_id ?? today })
   } catch (e) {
-    const error = e instanceof Error ? e.message : 'コーチとの通信に失敗しました'
+    const error = e instanceof Error && /prompt is too long/i.test(e.message)
+      ? '参照する計画や記録の量が多く、コーチに送信できませんでした。'
+      : e instanceof Error ? e.message : 'コーチとの通信に失敗しました'
     console.error('chat API error:', { elapsedMs: Date.now() - started, error })
     return NextResponse.json({ error }, { status: 500 })
   }

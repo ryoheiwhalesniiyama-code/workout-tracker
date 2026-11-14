@@ -73,7 +73,7 @@ export function reviewCards(plans: SavedPlan[], workouts: Workout[], today: stri
 }
 
 // 表示とAPI入力で同じ履歴選択を使う。日付境界では切らず、最新の会話単位で予算内に収める。
-export const HISTORY_LIMIT = 120
+export const HISTORY_LIMIT = 40
 export const HISTORY_CHAR_BUDGET = 48000
 export function selectHistory(newestFirst: CoachMessage[]): CoachMessage[] {
   const result: CoachMessage[] = []
